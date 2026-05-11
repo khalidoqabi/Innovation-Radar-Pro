@@ -45,38 +45,30 @@ def create_docx(report_text):
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.shared import Pt
     from docx.oxml.ns import qn
-    
+
     doc = Document()
-    
-    # تنظيف النص تماماً من الأوسمة والنجوم والمربعات 
+
+    # تنظيف النص من الشوائب البرمجية
     clean_text = re.sub(r'\[===.*?===\]', '', report_text)
     clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
-    
-    # إضافة العنوان الرئيسي ومحاذاته لليمين 
+
+    # إضافة العنوان
     title = doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
     title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    
-    paragraphs = clean_text.split('\n')
-    for para in paragraphs:
+
+    for para in clean_text.split('\n'):
         text = para.strip()
         if text:
             p = doc.add_paragraph()
-            # إجبار الفقرة على اتجاه اليمين لليسار (RTL) 
-            p.paragraph_format.right_to_left = True
             p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            # إجبار اتجاه الفقرة من اليمين لليسار (هذا يحل مشكلة الأقواس والكلمات الإنجليزية)
+            p.paragraph_format.right_to_left = True
+            
             run = p.add_run(text)
-            # ضبط لغة الخط للعربية بشكل صارم لمنع قلب الأقواس
             run.font.name = 'Arial'
-            run._element.rPr.rFonts.set(qn('w:ascii'), 'Arial')
-            run._element.rPr.rFonts.set(qn('w:hAnsi'), 'Arial')
-            run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
-            run._element.rPr.rFonts.set(qn('w:cs'), 'Arial') # الخط للغات المعقدة كالعربية
+            # تعريف الخط العربي للمكتبة
+            run._element.rPr.rFonts.set(qn('w:cs'), 'Arial')
             
-            # تحديد لغة الفقرة كعربية (السعودية مثلاً) لضبط اتجاه الأقواس
-            tag = run._element.get_or_add_rPr().get_or_add_lang()
-            tag.set(qn('w:val'), 'ar-SA')
-            
-            # تمييز العناوين الفرعية بخط عريض 
             if any(h in text for h in ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية"]):
                 run.bold = True
                 run.font.size = Pt(14)
