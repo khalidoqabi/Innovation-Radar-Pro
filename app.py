@@ -1,6 +1,5 @@
 import streamlit as st
-import requests
-import json
+import google.generativeai as genai
 import re
 
 # --- 1. إعدادات الهوية البصرية المتطورة ---
@@ -36,32 +35,21 @@ if "final_idea" not in st.session_state: st.session_state.final_idea = ""
 # --- 3. محرك الاتصال بـ API المطور (apifreellm) ---
 def call_pro_api(prompt):
     try:
-        # تأكد أنك وضعت المفتاح في Secrets باسم PRO_API_KEY
+        # تأكد من وضع المفتاح في Secrets باسم PRO_API_KEY
         api_key = st.secrets["PRO_API_KEY"]
-        url = "https://apifreellm.com/api/v1/chat"
+        genai.configure(api_key=api_key)
         
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
+        # استخدام موديل flash للسرعة أو pro للدقة العالية
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # التعديل هنا: المزود يطلب "message" وليس مصفوفة "messages"
-        payload = {
-            "message": prompt,
-            "model": "apifreellm"
-        }
+        response = model.generate_content(prompt)
         
-        response = requests.post(url, json=payload, headers=headers)
-        
-        if response.status_code == 200:
-            # المزود يرجع النص مباشرة في حقل 'response' أو 'message'
-            # سنقوم باستخراجه بناءً على توثيقهم الشائع
-            result = response.json()
-            return result.get('response', result.get('message', 'لا يوجد رد من السيرفر'))
+        if response.text:
+            return response.text
         else:
-            return f"خطأ من المزود: {response.status_code} - {response.text}"
+            return "عذراً، لم يتمكن المحرك من توليد استجابة."
     except Exception as e:
-        return f"فشل النظام في الوصول للمزود: {str(e)}"
+        return f"حدث خطأ في الاتصال بمحرك جوجل: {str(e)}"
 
 # --- 4. منطق التقرير المطور (المعايير الجديدة) ---
 def generate_pro_report(idea):
