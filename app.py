@@ -48,26 +48,33 @@ def create_docx(report_text):
 
     doc = Document()
 
-    # تنظيف النص من الشوائب البرمجية
+    # تنظيف النص
     clean_text = re.sub(r'\[===.*?===\]', '', report_text)
     clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
-    # إضافة العنوان
+    # إضافة العنوان ومحاذاته
     title = doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
     title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    # ضبط اتجاه العنوان لليمين
+    title.paragraph_format.right_to_left = True
 
     for para in clean_text.split('\n'):
         text = para.strip()
         if text:
             p = doc.add_paragraph()
-            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            # إجبار اتجاه الفقرة من اليمين لليسار (هذا يحل مشكلة الأقواس والكلمات الإنجليزية)
+            
+            # --- القوة هنا: ضبط اتجاه النص (Reading Order) من اليمين ---
             p.paragraph_format.right_to_left = True
+            
+            # المحاذاة البصرية لليمين
+            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             
             run = p.add_run(text)
             run.font.name = 'Arial'
-            # تعريف الخط العربي للمكتبة
-            run._element.rPr.rFonts.set(qn('w:cs'), 'Arial')
+            
+            # إخبار الوورد أن هذا النص يتبع اللغات ذات الاتجاه المعقد (Complex Scripts)
+            run._element.rPr.get_or_add_rFonts().set(qn('w:cs'), 'Arial')
+            run._element.rPr.get_or_add_rtl().val = True # تفعيل خاصية RTL للكلمات
             
             if any(h in text for h in ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية"]):
                 run.bold = True
