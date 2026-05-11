@@ -48,36 +48,24 @@ def create_docx(report_text):
 
     doc = Document()
 
-    # تنظيف النص من الشوائب البرمجية (مع الحفاظ على المحتوى كما هو)
+    # تنظيف النص من الشوائب البرمجية
     clean_text = re.sub(r'\[===.*?===\]', '', report_text)
     clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
-    # --- 1. إصلاح العنوان الرئيسي (إجبار اتجاه اليمين) ---
+    # --- 1. العنوان الرئيسي في الأعلى ---
     p_title = doc.add_paragraph()
-    p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT # المحاذاة يمين
-    p_title.paragraph_format.right_to_left = True # اتجاه القراءة يمين
+    p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_title.paragraph_format.right_to_left = True
     
     run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي')
     run_title.bold = True
-    run_title.font.size = Pt(20)
+    run_title.font.size = Pt(18)
     run_title.font.name = 'Arial'
-    # السطر القادم هو "السر" لضبط الاتجاه في الوورد برمجياً
     run_title._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-    # --- 2. إصلاح سطر الإعداد والتطوير (إجبار اتجاه اليمين) ---
-    p_credit = doc.add_paragraph()
-    p_credit.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_credit.paragraph_format.right_to_left = True
-    
-    run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
-    run_credit.bold = True
-    run_credit.font.size = Pt(12)
-    run_credit.font.name = 'Arial'
-    run_credit._element.get_or_add_rPr().get_or_add_rtl().val = True
+    doc.add_paragraph() # مسافة
 
-    doc.add_paragraph() # مسافة جمالية
-
-    # --- 3. بقية التقرير (تبقى كما هي دون تغيير في المنطق) ---
+    # --- 2. متن التقرير مع عناوين عريضة ---
     for para in clean_text.split('\n'):
         text = para.strip()
         if text:
@@ -87,16 +75,36 @@ def create_docx(report_text):
             
             run = p.add_run(text)
             run.font.name = 'Arial'
-            run._element.rPr.get_or_add_rFonts().set(qn('w:cs'), 'Arial')
             run._element.get_or_add_rPr().get_or_add_rtl().val = True
             
-            # تمييز العناوين الفرعية
+            # تمييز العناوين الفرعية (جعلها عريضة وكبيرة)
             keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
             if any(h in text for h in keywords):
                 run.bold = True
                 run.font.size = Pt(14)
+                # إضافة سطر فارغ بسيط قبل العنوان لتمييزه
+                p.paragraph_format.space_before = Pt(12)
             else:
-                run.font.size = Pt(12)
+                run.font.size = Pt(11)
+
+    # --- 3. حقوق الإعداد في أسفل التقرير ---
+    doc.add_paragraph() # مسافة قبل الخاتمة
+    p_footer = doc.add_paragraph()
+    p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_footer.paragraph_format.right_to_left = True
+    
+    # إضافة خط فاصل بسيط قبل الحقوق
+    run_line = p_footer.add_run("__________________")
+    doc.add_paragraph()
+    
+    p_credit = doc.add_paragraph()
+    p_credit.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_credit.paragraph_format.right_to_left = True
+    run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
+    run_credit.bold = True
+    run_credit.font.size = Pt(10)
+    run_credit.font.name = 'Arial'
+    run_credit._element.get_or_add_rPr().get_or_add_rtl().val = True
 
     bio = BytesIO()
     doc.save(bio)
