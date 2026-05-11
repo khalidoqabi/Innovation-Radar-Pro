@@ -64,11 +64,17 @@ def create_docx(report_text):
             # إجبار الفقرة على اتجاه اليمين لليسار (RTL) 
             p.paragraph_format.right_to_left = True
             p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            
             run = p.add_run(text)
+            # ضبط لغة الخط للعربية بشكل صارم لمنع قلب الأقواس
             run.font.name = 'Arial'
-            # تأكد من دعم اللغة العربية في ملف الوورد برمجياً
+            run._element.rPr.rFonts.set(qn('w:ascii'), 'Arial')
+            run._element.rPr.rFonts.set(qn('w:hAnsi'), 'Arial')
             run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
+            run._element.rPr.rFonts.set(qn('w:cs'), 'Arial') # الخط للغات المعقدة كالعربية
+            
+            # تحديد لغة الفقرة كعربية (السعودية مثلاً) لضبط اتجاه الأقواس
+            tag = run._element.get_or_add_rPr().get_or_add_lang()
+            tag.set(qn('w:val'), 'ar-SA')
             
             # تمييز العناوين الفرعية بخط عريض 
             if any(h in text for h in ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية"]):
