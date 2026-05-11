@@ -48,35 +48,48 @@ def create_docx(report_text):
 
     doc = Document()
 
-    # تنظيف النص
+    # تنظيف النص من الشوائب البرمجية
     clean_text = re.sub(r'\[===.*?===\]', '', report_text)
     clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
-    # إضافة العنوان ومحاذاته
-    title = doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
-    title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    # ضبط اتجاه العنوان لليمين
-    title.paragraph_format.right_to_left = True
+    # --- 1. العنوان الرئيسي (ضبط المحاذاة والاتجاه) ---
+    title_text = 'تقرير رادار الابتكار الاحترافي'
+    p_title = doc.add_heading('', level=0)
+    p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT # محاذاة لليمين
+    p_title.paragraph_format.right_to_left = True # اتجاه من اليمين
+    
+    run_title = p_title.add_run(title_text)
+    run_title.font.name = 'Arial'
+    run_title._element.rPr.get_or_add_rFonts().set(qn('w:cs'), 'Arial')
 
+    # --- 2. إضافة سطر الإعداد والتطوير (حقوقك الشخصية) ---
+    p_credit = doc.add_paragraph()
+    p_credit.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_credit.paragraph_format.right_to_left = True
+    run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
+    run_credit.bold = True
+    run_credit.font.size = Pt(12)
+    run_credit.font.name = 'Arial'
+    run_credit._element.rPr.get_or_add_rFonts().set(qn('w:cs'), 'Arial')
+
+    doc.add_paragraph() # سطر فارغ للجمالية
+
+    # --- 3. معالجة بقية التقرير ---
     for para in clean_text.split('\n'):
         text = para.strip()
         if text:
             p = doc.add_paragraph()
-            
-            # --- القوة هنا: ضبط اتجاه النص (Reading Order) من اليمين ---
-            p.paragraph_format.right_to_left = True
-            
-            # المحاذاة البصرية لليمين
             p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            p.paragraph_format.right_to_left = True
             
             run = p.add_run(text)
             run.font.name = 'Arial'
-            
-            # إخبار الوورد أن هذا النص يتبع اللغات ذات الاتجاه المعقد (Complex Scripts)
             run._element.rPr.get_or_add_rFonts().set(qn('w:cs'), 'Arial')
-            run._element.rPr.get_or_add_rtl().val = True # تفعيل خاصية RTL للكلمات
+            run._element.rPr.get_or_add_rtl().val = True
             
-            if any(h in text for h in ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية"]):
+            # جعل العناوين الرئيسية داخل التقرير عريضة (Bold)
+            keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
+            if any(h in text for h in keywords):
                 run.bold = True
                 run.font.size = Pt(14)
             else:
