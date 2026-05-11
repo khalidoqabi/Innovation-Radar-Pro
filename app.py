@@ -48,33 +48,36 @@ def create_docx(report_text):
 
     doc = Document()
 
-    # تنظيف النص من الشوائب البرمجية
+    # تنظيف النص من الشوائب البرمجية (مع الحفاظ على المحتوى كما هو)
     clean_text = re.sub(r'\[===.*?===\]', '', report_text)
     clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
-    # --- 1. العنوان الرئيسي (ضبط المحاذاة والاتجاه) ---
-    title_text = 'تقرير رادار الابتكار الاحترافي'
-    p_title = doc.add_heading('', level=0)
-    p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT # محاذاة لليمين
-    p_title.paragraph_format.right_to_left = True # اتجاه من اليمين
+    # --- 1. إصلاح العنوان الرئيسي (إجبار اتجاه اليمين) ---
+    p_title = doc.add_paragraph()
+    p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT # المحاذاة يمين
+    p_title.paragraph_format.right_to_left = True # اتجاه القراءة يمين
     
-    run_title = p_title.add_run(title_text)
+    run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي')
+    run_title.bold = True
+    run_title.font.size = Pt(20)
     run_title.font.name = 'Arial'
-    run_title._element.rPr.get_or_add_rFonts().set(qn('w:cs'), 'Arial')
+    # السطر القادم هو "السر" لضبط الاتجاه في الوورد برمجياً
+    run_title._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-    # --- 2. إضافة سطر الإعداد والتطوير (حقوقك الشخصية) ---
+    # --- 2. إصلاح سطر الإعداد والتطوير (إجبار اتجاه اليمين) ---
     p_credit = doc.add_paragraph()
     p_credit.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_credit.paragraph_format.right_to_left = True
+    
     run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
     run_credit.bold = True
     run_credit.font.size = Pt(12)
     run_credit.font.name = 'Arial'
-    run_credit._element.rPr.get_or_add_rFonts().set(qn('w:cs'), 'Arial')
+    run_credit._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-    doc.add_paragraph() # سطر فارغ للجمالية
+    doc.add_paragraph() # مسافة جمالية
 
-    # --- 3. معالجة بقية التقرير ---
+    # --- 3. بقية التقرير (تبقى كما هي دون تغيير في المنطق) ---
     for para in clean_text.split('\n'):
         text = para.strip()
         if text:
@@ -85,9 +88,9 @@ def create_docx(report_text):
             run = p.add_run(text)
             run.font.name = 'Arial'
             run._element.rPr.get_or_add_rFonts().set(qn('w:cs'), 'Arial')
-            run._element.rPr.get_or_add_rtl().val = True
+            run._element.get_or_add_rPr().get_or_add_rtl().val = True
             
-            # جعل العناوين الرئيسية داخل التقرير عريضة (Bold)
+            # تمييز العناوين الفرعية
             keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
             if any(h in text for h in keywords):
                 run.bold = True
