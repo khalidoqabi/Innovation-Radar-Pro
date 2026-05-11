@@ -36,26 +36,30 @@ if "final_idea" not in st.session_state: st.session_state.final_idea = ""
 # --- 3. محرك الاتصال بـ API المطور (apifreellm) ---
 def call_pro_api(prompt):
     try:
-        # ملاحظة: تأكد من وضع المفتاح في Streamlit Secrets
+        # تأكد أنك وضعت المفتاح في Secrets باسم PRO_API_KEY
         api_key = st.secrets["PRO_API_KEY"]
-        # هذا الرابط قد يتغير حسب تعليمات المزود، سنستخدم المسار المتوافق مع OpenAI Format الشائع لديهم
-        url = "https://api.apifreellm.com/v1/chat/completions" 
+        url = "https://apifreellm.com/api/v1/chat"
         
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         
+        # التعديل هنا: المزود يطلب "message" وليس مصفوفة "messages"
         payload = {
-            "model": "gemini-1.5-flash", # أو الموديل الذي يدعمه المزود
-            "messages": [{"role": "user", "content": prompt}]
+            "message": prompt,
+            "model": "apifreellm"
         }
         
         response = requests.post(url, json=payload, headers=headers)
+        
         if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
+            # المزود يرجع النص مباشرة في حقل 'response' أو 'message'
+            # سنقوم باستخراجه بناءً على توثيقهم الشائع
+            result = response.json()
+            return result.get('response', result.get('message', 'لا يوجد رد من السيرفر'))
         else:
-            return f"خطأ في الاتصال بالمزود الجديد: {response.status_code}"
+            return f"خطأ من المزود: {response.status_code} - {response.text}"
     except Exception as e:
         return f"فشل النظام في الوصول للمزود: {str(e)}"
 
