@@ -7,39 +7,38 @@ import base64
 
 # --- 1. إعدادات الهوية البصرية وتنسيق RTL (حل مشكلة الاتجاه والتلاصق) ---
 st.set_page_config(page_title="Innovation Radar Pro v2", layout="wide")
-
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
     
-    /* إجبار التطبيق بالكامل على اتجاه اليمين إلى اليسار */
+    /* إجبار التطبيق بالكامل على اتجاه اليمين والمحاذاة لليمين */
     html, body, [data-testid="stAppViewContainer"], .stApp {
         direction: rtl !important;
         text-align: right !important;
         font-family: 'Tajawal', sans-serif !important;
     }
     
-    /* تنسيق النصوص داخل التبويبات والصناديق لضمان عدم التلاصق */
-    p, li, span, div {
+    /* منع التوسيط نهائياً في النصوص والفقرات */
+    p, li, span, div, label {
         direction: rtl !important;
         text-align: right !important;
-        line-height: 1.8 !important; /* زيادة المسافة بين الأسطر لمنع تداخل الحروف */
-        letter-spacing: 0.2px !important; /* مسافة بسيطة بين الحروف */
+        line-height: 1.6 !important;
+        display: block; /* يضمن عدم التمركز في الوسط */
     }
 
-    /* تحسين شكل العناوين */
-    h1, h2, h3 {
+    /* ضمان محاذاة العناوين لليمين */
+    h1, h2, h3, h4, h5, h6 {
+        text-align: right !important;
         color: #1e3a8a !important;
-        font-weight: 700 !important;
+        direction: rtl !important;
     }
 
-    /* تنسيق أزرار التبويبات لتظهر بشكل صحيح من اليمين */
-    .stTabs [data-baseweb="tab-list"] {
-        direction: rtl !important;
+    /* تحسين شكل صناديق التنبيه لتكون محاذاتها يميناً */
+    div[data-testid="stMarkdownContainer"] > div {
+        text-align: right !important;
     }
     </style>
 """, unsafe_allow_html=True)
-
 # --- 2. دالة إنشاء ملف Word (بخطوط عربية منسقة) ---
 def create_docx(report_text):
     doc = Document()
