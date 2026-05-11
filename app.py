@@ -1,96 +1,110 @@
 import streamlit as st
 import requests
 import re
+from docx import Document
+from io import BytesIO
+import base64
 
-# --- 1. إعدادات الهوية البصرية ---
-st.set_page_config(page_title="Innovation Radar Pro", layout="wide")
+# --- إعدادات الصفحة ---
+st.set_page_config(page_title="Innovation Radar Pro v2", layout="wide")
 
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
-    html, body, [data-testid="stSidebar"], .stApp {
-        direction: rtl !important; text-align: right !important; font-family: 'Tajawal', sans-serif !important;
-    }
-    .pro-header {
-        background: linear-gradient(90deg, #1e3a8a, #10b981);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        font-size: 2.5em; font-weight: 900; text-align: center;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# --- دالة إنشاء ملف Word مخصص ---
+def create_docx(report_text):
+    doc = Document()
+    doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
+    doc.add_paragraph(report_text)
+    bio = BytesIO()
+    doc.save(bio)
+    return bio.getvalue()
 
-# --- 2. إدارة الحالة ---
-if "gate_passed" not in st.session_state: st.session_state.gate_passed = False
-if "full_report" not in st.session_state: st.session_state.full_report = None
-if "final_idea" not in st.session_state: st.session_state.final_idea = ""
-
-# --- 3. المحرك المباشر (REST API) المتوافق مع CURL ---
-def call_pro_api(prompt):
+# --- دالة الاتصال المطور (تدعم الصور والنصوص) ---
+def call_pro_api(prompt, image_file=None):
     try:
-        # تأكد من وضع المفتاح في Secrets باسم PRO_API_KEY
         api_key = st.secrets["PRO_API_KEY"]
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
         
-        headers = {'Content-Type': 'application/json'}
-        
-        # تحويل هيكل الـ CURL إلى قاموس بايثون (JSON)
-        payload = {
-            "contents": [
-                {
-                    "parts": [{"text": prompt}]
-                }
-            ]
-        }
-        
-        response = requests.post(url, json=payload, headers=headers)
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result['candidates'][0]['content']['parts'][0]['text']
+        if image_file:
+            # إذا وجدت صورة، يتم إرسالها مع النص (Multimodal)
+            img_data = base64.b64encode(image_file.read()).decode('utf-8')
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"text": prompt},
+                        {"inline_data": {"mime_type": "image/jpeg", "data": img_data}}
+                    ]
+                }]
+            }
         else:
-            return f"خطأ في الاتصال: {response.status_code} - {response.text}"
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+        response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+        if response.status_code == 200:
+            return response.json()['candidates'][0]['content']['parts'][0]['text']
+        return f"خطأ: {response.status_code}"
     except Exception as e:
-        return f"فشل النظام: {str(e)}"
+        return f"فشل: {str(e)}"
 
-# --- 4. واجهة المستخدم ---
-st.markdown("<h1 class='pro-header'>🛡️ رادار الابتكار Pro</h1>", unsafe_allow_html=True)
+# --- واجهة المستخدم ---
+st.markdown("<h1 style='text-align:center; color:#1e3a8a;'>🛡️ رادار الابتكار Pro (النسخة التنفيذية)</h1>", unsafe_allow_html=True)
 
-if not st.session_state.gate_passed:
-    idea_input = st.text_area("اشرح فكرتك التقنية هنا...", height=150)
-    if st.button("بدء الفحص 🚀"):
+if not st.session_state.get("gate_passed"):
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        idea_input = st.text_area("✍️ اشرح فكرتك التقنية:", height=200)
+    with col2:
+        uploaded_file = st.file_uploader("🖼️ ارفع رسم كروكي أو صورة (اختياري):", type=["jpg", "png", "jpeg"])
+    
+    if st.button("بدء الفحص الاستراتيجي 🚀"):
         if idea_input:
             st.session_state.final_idea = idea_input
+            st.session_state.uploaded_file = uploaded_file
             st.session_state.gate_passed = True
             st.rerun()
 else:
-    if st.session_state.full_report is None:
-        with st.spinner("جاري التحليل المعمق..."):
-            pro_prompt = f"""
-            بصفتك خبير براءات اختراع، حلل الفكرة: "{st.session_state.final_idea}"
-            وقدم تقريراً باللغة العربية كالتالي:
+    if st.session_state.get("full_report") is None:
+        with st.spinner("جاري تحليل البيانات والصور وتوليد التقرير المنسق..."):
+            prompt = f"""
+            بصفتك خبير براءات اختراع، حلل الفكرة (والصورة المرفقة إن وجدت): "{st.session_state.final_idea}"
+            وقدم تقريراً باللغة العربية مقسماً بوضوح كالتالي:
             [===LEVEL1===] التشخيص الاستراتيجي والمنافسين.
             [===LEVEL2===] المطالبات التقنية وأقرب 3 اختراعات مشابهة.
             [===LEVEL3===] الجدوى الاقتصادية وخارطة الطريق.
-            [===AUDIT===] نسبة الفرادة المحتملة (نسبة مئوية مع التبرير).
+            [===AUDIT===] نسبة الفرادة المحتملة.
             [===SOVEREIGNTY===] توصية السيادة التسويقية.
             """
-            st.session_state.full_report = call_pro_api(pro_prompt)
+            st.session_state.full_report = call_pro_api(prompt, st.session_state.uploaded_file)
+
+    # --- عرض التقرير بتنسيق احترافي ---
+    report = st.session_state.full_report
+    parts = re.split(r'\[===LEVEL[1-3]===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', report)
     
-    # عرض النتائج في تبويبات
-    parts = re.split(r'\[===LEVEL[1-3]===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', st.session_state.full_report)
+    tab1, tab2, tab3 = st.tabs(["📊 التشخيص", "🔧 التقنية والمراجع", "🛣️ التنفيذ"])
     
-    tab1, tab2, tab3 = st.tabs(["📊 التشخيص", "🔧 المطالبات والمراجع", "🛣️ الطريق للتنفيذ"])
-    
-    with tab1: st.write(parts[1] if len(parts) > 1 else st.session_state.full_report)
-    with tab2: st.write(parts[2] if len(parts) > 2 else "لا توجد تفاصيل.")
-    with tab3: st.write(parts[3] if len(parts) > 3 else "لا توجد تفاصيل.")
+    with tab1:
+        st.info(parts[1] if len(parts)>1 else "جاري التحميل...")
+    with tab2:
+        st.success(parts[2] if len(parts)>2 else "جاري التحميل...")
+    with tab3:
+        st.warning(parts[3] if len(parts)>3 else "جاري التحميل...")
 
     st.divider()
-    if len(parts) > 4:
-        st.success(f"⭐ مؤشر الفرادة: {parts[4]}")
-    if len(parts) > 5:
-        st.warning(f"💡 توصية السيادة: {parts[5]}")
+    # عرض النتائج النهائية في صناديق بارزة
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(f"### ⭐ الفرادة\n{parts[4] if len(parts)>4 else 'N/A'}")
+    with c2:
+        st.markdown(f"### 💡 السيادة\n{parts[5] if len(parts)>5 else 'N/A'}")
 
-    if st.button("فحص جديد"):
-        for key in list(st.session_state.keys()): del st.session_state[key]
+    # --- أزرار التحميل ---
+    st.divider()
+    docx_file = create_docx(report)
+    st.download_button(
+        label="📥 تحميل التقرير كملف Word مفسر",
+        data=docx_file,
+        file_name="Innovation_Report_Pro.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+    if st.button("🔄 فحص ابتكار جديد"):
+        st.session_state.clear()
         st.rerun()
