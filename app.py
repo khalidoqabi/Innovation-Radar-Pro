@@ -127,6 +127,7 @@ st.markdown("<h1 style='text-align:center;'>🛡️ رادار الابتكار 
 if not st.session_state.get("gate_passed"):
     col1, col2 = st.columns([2, 1])
     with col1:
+        # placeholder يمنع التلاصق البصري في خانة الإدخال
         idea_input = st.text_area("✍️ اشرح فكرتك التقنية بالتفصيل:", height=200, placeholder="مثال: نظام ذكي لصيانة الجسور باستخدام الدرون...")
     with col2:
         uploaded_file = st.file_uploader("🖼️ ارفع رسم كروكي (اختياري):", type=["jpg", "png", "jpeg"])
@@ -138,20 +139,24 @@ if not st.session_state.get("gate_passed"):
             st.session_state.gate_passed = True
             st.rerun()
 else:
+    # المرحلة الثانية: التحليل (يحدث فقط مرة واحدة بفضل Session State)
     if st.session_state.get("full_report") is None:
         with st.spinner("جاري تحليل البيانات والصور وتوليد التقرير المنسق..."):
+            # البرومبت المطور لضمان عدم تلاصق الكلمات في الرد
             prompt = f"""
             بصفتك خبير براءات اختراع عالمي، حلل الفكرة (والصورة المرفقة إن وجدت): "{st.session_state.final_idea}"
-            وقدم تقريراً باللغة العربية مقسماً بوضوح باستخدام الأوسمة التالية حصراً:
-            [===LEVEL1===] (للتشخيص الاستراتيجي)
-            [===LEVEL2===] (للمطالبات والمراجع)
-            [===LEVEL3===] (للجدوى والطريق)
-            [===AUDIT===] (للفرادة)
-            [===SOVEREIGNTY===] (للسيادة)
-            ملاحظة: اجعل المسافات واضحة بين الكلمات والأسطر.
+            وقدم تقريراً احترافياً باللغة العربية. 
+            هام جداً: التزم بترك مسافات واضحة بين الكلمات والأسطر، واستخدم الأوسمة التالية حصراً للتقسيم:
+            [===LEVEL1===] التشخيص الاستراتيجي والمنافسين
+            [===LEVEL2===] المطالبات التقنية والمراجع
+            [===LEVEL3===] الجدوى الاقتصادية وخارطة الطريق
+            [===AUDIT===] نسبة الفرادة المحتملة
+            [===SOVEREIGNTY===] توصية السيادة التسويقية
             """
+            # استدعاء المحرك
             st.session_state.full_report = call_pro_api(prompt, st.session_state.uploaded_file)
 
+    report = st.session_state.full_report
     report = st.session_state.full_report
     parts = re.split(r'\[===LEVEL[1-3]===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', report)
     
