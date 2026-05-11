@@ -33,21 +33,21 @@ if "full_report" not in st.session_state: st.session_state.full_report = None
 if "final_idea" not in st.session_state: st.session_state.final_idea = ""
 
 # --- 3. محرك الاتصال بـ API المطور (apifreellm) ---
-def call_pro_api(prompt):
-    try:
-        # تأكد من وضع المفتاح في Secrets باسم PRO_API_KEY
-        api_key = st.secrets["PRO_API_KEY"]
-        genai.configure(api_key=api_key)
-        
-        # استخدام موديل flash للسرعة أو pro للدقة العالية
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        response = model.generate_content(prompt)
-        
-        if response.text:
-            return response.text
-        else:
-            return "عذراً، لم يتمكن المحرك من توليد استجابة."
+curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent" \
+  -H 'Content-Type: application/json' \
+  -H 'X-goog-api-key: AIzaSyAXvTTvNpi4qEui78ca5JqMOtJjCoo3Hys' \
+  -X POST \
+  -d '{
+    "contents": [
+      {
+        "parts": [
+          {
+            "text": "Explain how AI works in a few words"
+          }
+        ]
+      }
+    ]
+  }'
     except Exception as e:
         return f"حدث خطأ في الاتصال بمحرك جوجل: {str(e)}"
 
