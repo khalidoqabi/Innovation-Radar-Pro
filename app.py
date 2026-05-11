@@ -132,6 +132,8 @@ if not st.session_state.get("gate_passed"):
         uploaded_file = st.file_uploader("🖼️ ارفع رسم كروكي (اختياري):", type=["jpg", "png", "jpeg"])
     
     if st.button("بدء الفحص الاستراتيجي 🚀"):
+        # هنا فقط يبدأ الاتصال بالمفتاح الجديد
+    result = call_pro_api(prompt, st.session_state.uploaded_file)
         if idea_input:
             st.session_state.final_idea = idea_input
             st.session_state.uploaded_file = uploaded_file
