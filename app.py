@@ -44,30 +44,34 @@ def create_docx(report_text):
     from docx import Document
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.shared import Pt
+    from docx.oxml.ns import qn
     
     doc = Document()
     
-    # تنظيف النص من الرموز البرمجية تماماً
-    clean_text = re.sub(r'\[===.*?===\]', '', report_text) # إزالة الأوسمة
-    clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '')
+    # تنظيف النص تماماً من الأوسمة والنجوم والمربعات 
+    clean_text = re.sub(r'\[===.*?===\]', '', report_text)
+    clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
     
-    # إضافة العنوان الرئيسي بشكل بارز ومحاذاته لليمين
+    # إضافة العنوان الرئيسي ومحاذاته لليمين 
     title = doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
-    title.alignment = WD_ALIGN_PARAGRAPH.RIGHT [cite: 1]
+    title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     
     paragraphs = clean_text.split('\n')
     for para in paragraphs:
-        if para.strip():
-            # إذا كان السطر يمثل عنواناً (مثل "التشخيص الاستراتيجي")
+        text = para.strip()
+        if text:
             p = doc.add_paragraph()
-            run = p.add_run(para.strip())
-            
-            # تنسيق الفقرة
-            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            # إجبار الفقرة على اتجاه اليمين لليسار (RTL) 
             p.paragraph_format.right_to_left = True
+            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             
-            # تمييز العناوين الفرعية
-            if any(heading in para for heading in ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية"]):
+            run = p.add_run(text)
+            run.font.name = 'Arial'
+            # تأكد من دعم اللغة العربية في ملف الوورد برمجياً
+            run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
+            
+            # تمييز العناوين الفرعية بخط عريض 
+            if any(h in text for h in ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية"]):
                 run.bold = True
                 run.font.size = Pt(14)
             else:
