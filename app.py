@@ -5,26 +5,60 @@ from docx import Document
 from io import BytesIO
 import base64
 
-# --- إعدادات الصفحة ---
+# --- 1. إعدادات الهوية البصرية وتنسيق RTL (حل مشكلة الاتجاه والتلاصق) ---
 st.set_page_config(page_title="Innovation Radar Pro v2", layout="wide")
 
-# --- دالة إنشاء ملف Word مخصص ---
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+    
+    /* إجبار التطبيق بالكامل على اتجاه اليمين إلى اليسار */
+    html, body, [data-testid="stAppViewContainer"], .stApp {
+        direction: rtl !important;
+        text-align: right !important;
+        font-family: 'Tajawal', sans-serif !important;
+    }
+    
+    /* تنسيق النصوص داخل التبويبات والصناديق لضمان عدم التلاصق */
+    p, li, span, div {
+        direction: rtl !important;
+        text-align: right !important;
+        line-height: 1.8 !important; /* زيادة المسافة بين الأسطر لمنع تداخل الحروف */
+        letter-spacing: 0.2px !important; /* مسافة بسيطة بين الحروف */
+    }
+
+    /* تحسين شكل العناوين */
+    h1, h2, h3 {
+        color: #1e3a8a !important;
+        font-weight: 700 !important;
+    }
+
+    /* تنسيق أزرار التبويبات لتظهر بشكل صحيح من اليمين */
+    .stTabs [data-baseweb="tab-list"] {
+        direction: rtl !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 2. دالة إنشاء ملف Word (بخطوط عربية منسقة) ---
 def create_docx(report_text):
     doc = Document()
+    # تنظيف النص من الرموز البرمجية قبل وضعه في الوورد
+    clean_text = re.sub(r'\[===.*?===\]', '', report_text)
     doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
-    doc.add_paragraph(report_text)
+    p = doc.add_paragraph(clean_text)
+    p.alignment = 1 # محاذاة للوسط أو اليمين
     bio = BytesIO()
     doc.save(bio)
     return bio.getvalue()
 
-# --- دالة الاتصال المطور (تدعم الصور والنصوص) ---
+# --- 3. المحرك المباشر المتوافق مع Gemini Flash Latest ---
 def call_pro_api(prompt, image_file=None):
     try:
         api_key = st.secrets["PRO_API_KEY"]
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
         
         if image_file:
-            # إذا وجدت صورة، يتم إرسالها مع النص (Multimodal)
             img_data = base64.b64encode(image_file.read()).decode('utf-8')
             payload = {
                 "contents": [{
@@ -40,19 +74,19 @@ def call_pro_api(prompt, image_file=None):
         response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
         if response.status_code == 200:
             return response.json()['candidates'][0]['content']['parts'][0]['text']
-        return f"خطأ: {response.status_code}"
+        return f"خطأ في الاتصال: {response.status_code}"
     except Exception as e:
-        return f"فشل: {str(e)}"
+        return f"فشل المحرك: {str(e)}"
 
-# --- واجهة المستخدم ---
-st.markdown("<h1 style='text-align:center; color:#1e3a8a;'>🛡️ رادار الابتكار Pro (النسخة التنفيذية)</h1>", unsafe_allow_html=True)
+# --- 4. واجهة المستخدم ---
+st.markdown("<h1 style='text-align:center;'>🛡️ رادار الابتكار Pro</h1>", unsafe_allow_html=True)
 
 if not st.session_state.get("gate_passed"):
     col1, col2 = st.columns([2, 1])
     with col1:
-        idea_input = st.text_area("✍️ اشرح فكرتك التقنية:", height=200)
+        idea_input = st.text_area("✍️ اشرح فكرتك التقنية بالتفصيل:", height=200, placeholder="مثال: نظام ذكي لصيانة الجسور باستخدام الدرون...")
     with col2:
-        uploaded_file = st.file_uploader("🖼️ ارفع رسم كروكي أو صورة (اختياري):", type=["jpg", "png", "jpeg"])
+        uploaded_file = st.file_uploader("🖼️ ارفع رسم كروكي (اختياري):", type=["jpg", "png", "jpeg"])
     
     if st.button("بدء الفحص الاستراتيجي 🚀"):
         if idea_input:
@@ -64,42 +98,40 @@ else:
     if st.session_state.get("full_report") is None:
         with st.spinner("جاري تحليل البيانات والصور وتوليد التقرير المنسق..."):
             prompt = f"""
-            بصفتك خبير براءات اختراع، حلل الفكرة (والصورة المرفقة إن وجدت): "{st.session_state.final_idea}"
-            وقدم تقريراً باللغة العربية مقسماً بوضوح كالتالي:
-            [===LEVEL1===] التشخيص الاستراتيجي والمنافسين.
-            [===LEVEL2===] المطالبات التقنية وأقرب 3 اختراعات مشابهة.
-            [===LEVEL3===] الجدوى الاقتصادية وخارطة الطريق.
-            [===AUDIT===] نسبة الفرادة المحتملة.
-            [===SOVEREIGNTY===] توصية السيادة التسويقية.
+            بصفتك خبير براءات اختراع عالمي، حلل الفكرة (والصورة المرفقة إن وجدت): "{st.session_state.final_idea}"
+            وقدم تقريراً باللغة العربية مقسماً بوضوح باستخدام الأوسمة التالية حصراً:
+            [===LEVEL1===] (للتشخيص الاستراتيجي)
+            [===LEVEL2===] (للمطالبات والمراجع)
+            [===LEVEL3===] (للجدوى والطريق)
+            [===AUDIT===] (للفرادة)
+            [===SOVEREIGNTY===] (للسيادة)
+            ملاحظة: اجعل المسافات واضحة بين الكلمات والأسطر.
             """
             st.session_state.full_report = call_pro_api(prompt, st.session_state.uploaded_file)
 
-    # --- عرض التقرير بتنسيق احترافي ---
     report = st.session_state.full_report
     parts = re.split(r'\[===LEVEL[1-3]===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', report)
     
-    tab1, tab2, tab3 = st.tabs(["📊 التشخيص", "🔧 التقنية والمراجع", "🛣️ التنفيذ"])
+    tab1, tab2, tab3 = st.tabs(["📊 التشخيص الاستراتيجي", "🔧 المراجع التقنية", "🛣️ خارطة التنفيذ"])
     
     with tab1:
-        st.info(parts[1] if len(parts)>1 else "جاري التحميل...")
+        st.markdown(f"<div style='direction:rtl; text-align:right;'>{parts[1] if len(parts)>1 else report}</div>", unsafe_allow_html=True)
     with tab2:
-        st.success(parts[2] if len(parts)>2 else "جاري التحميل...")
+        st.markdown(f"<div style='direction:rtl; text-align:right;'>{parts[2] if len(parts)>2 else ''}</div>", unsafe_allow_html=True)
     with tab3:
-        st.warning(parts[3] if len(parts)>3 else "جاري التحميل...")
+        st.markdown(f"<div style='direction:rtl; text-align:right;'>{parts[3] if len(parts)>3 else ''}</div>", unsafe_allow_html=True)
 
     st.divider()
-    # عرض النتائج النهائية في صناديق بارزة
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"### ⭐ الفرادة\n{parts[4] if len(parts)>4 else 'N/A'}")
+        st.info(f"**⭐ مؤشر الفرادة**\n\n{parts[4] if len(parts)>4 else 'جاري التقييم...'}")
     with c2:
-        st.markdown(f"### 💡 السيادة\n{parts[5] if len(parts)>5 else 'N/A'}")
+        st.warning(f"**💡 توصية السيادة**\n\n{parts[5] if len(parts)>5 else 'جاري التحليل...'}")
 
-    # --- أزرار التحميل ---
     st.divider()
     docx_file = create_docx(report)
     st.download_button(
-        label="📥 تحميل التقرير كملف Word مفسر",
+        label="📥 تحميل التقرير كملف Word منسق",
         data=docx_file,
         file_name="Innovation_Report_Pro.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
