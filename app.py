@@ -87,10 +87,15 @@ def create_docx(report_text):
     return bio.getvalue()
 # --- 3. المحرك المباشر المتوافق مع Gemini Flash Latest ---
 def call_pro_api(prompt, image_file=None):
+    # المفتاح يُستدعى فقط عند تنفيذ الدالة
+    api_key = st.secrets["PRO_API_KEY"]
+    
+    # الرابط المستقر (v1) لضمان عدم حدوث 403 أو 404
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-flash-latest:generateContent?key={api_key}"
+    
+    headers = {'Content-Type': 'application/json'}
+    
     try:
-        api_key = st.secrets["PRO_API_KEY"]
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
-        
         if image_file:
             img_data = base64.b64encode(image_file.read()).decode('utf-8')
             payload = {
@@ -102,14 +107,19 @@ def call_pro_api(prompt, image_file=None):
                 }]
             }
         else:
-            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
 
-        response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        
         if response.status_code == 200:
             return response.json()['candidates'][0]['content']['parts'][0]['text']
-        return f"خطأ في الاتصال: {response.status_code}"
+        else:
+            return f"خطأ في الاتصال: {response.status_code} - {response.text}"
+            
     except Exception as e:
-        return f"فشل المحرك: {str(e)}"
+        return f"فشل النظام في الاستجابة: {str(e)}"
 
 # --- 4. واجهة المستخدم ---
 st.markdown("<h1 style='text-align:center;'>🛡️ رادار الابتكار Pro</h1>", unsafe_allow_html=True)
