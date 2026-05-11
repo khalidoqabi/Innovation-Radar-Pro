@@ -29,7 +29,7 @@ def call_pro_api(prompt):
     try:
         # تأكد من وضع المفتاح في Secrets باسم PRO_API_KEY
         api_key = st.secrets["PRO_API_KEY"]
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
         
         headers = {'Content-Type': 'application/json'}
         
