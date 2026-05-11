@@ -41,31 +41,37 @@ st.markdown("""
 """, unsafe_allow_html=True)
 # --- 2. دالة إنشاء ملف Word (بخطوط عربية منسقة) ---
 def create_docx(report_text):
+    from docx import Document
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt
+    
     doc = Document()
     
-    # 1. إعداد نمط النص الافتراضي ليكون محاذياً لليمين
-    style = doc.styles['Normal']
-    style.font.name = 'Arial' # أو أي خط يدعم العربية
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    # تنظيف النص من الرموز البرمجية تماماً
+    clean_text = re.sub(r'\[===.*?===\]', '', report_text) # إزالة الأوسمة
+    clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '')
     
-    # 2. تنظيف النص من الأوسمة البرمجية والرموز المزعجة
-    # إزالة الأوسمة مثل [===LEVEL1===]
-    clean_text = re.sub(r'\[===.*?===\]', '', report_text)
-    # إزالة النجوم الزائدة التي يستخدمها الذكاء الاصطناعي للتحديد
-    clean_text = clean_text.replace('**', '').replace('*', '')
+    # إضافة العنوان الرئيسي بشكل بارز ومحاذاته لليمين
+    title = doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.RIGHT [cite: 1]
     
-    # إضافة عنوان رئيسي منسق
-    heading = doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
-    heading.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    
-    # تقسيم النص إلى فقرات وإضافتها مع محاذاة لليمين
     paragraphs = clean_text.split('\n')
     for para in paragraphs:
         if para.strip():
-            p = doc.add_paragraph(para.strip())
+            # إذا كان السطر يمثل عنواناً (مثل "التشخيص الاستراتيجي")
+            p = doc.add_paragraph()
+            run = p.add_run(para.strip())
+            
+            # تنسيق الفقرة
             p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            # ضبط اتجاه الفقرة ليكون من اليمين لليسار (RTL)
             p.paragraph_format.right_to_left = True
+            
+            # تمييز العناوين الفرعية
+            if any(heading in para for heading in ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية"]):
+                run.bold = True
+                run.font.size = Pt(14)
+            else:
+                run.font.size = Pt(12)
 
     bio = BytesIO()
     doc.save(bio)
