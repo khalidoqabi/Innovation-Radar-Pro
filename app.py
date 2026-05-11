@@ -42,15 +42,34 @@ st.markdown("""
 # --- 2. دالة إنشاء ملف Word (بخطوط عربية منسقة) ---
 def create_docx(report_text):
     doc = Document()
-    # تنظيف النص من الرموز البرمجية قبل وضعه في الوورد
+    
+    # 1. إعداد نمط النص الافتراضي ليكون محاذياً لليمين
+    style = doc.styles['Normal']
+    style.font.name = 'Arial' # أو أي خط يدعم العربية
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    
+    # 2. تنظيف النص من الأوسمة البرمجية والرموز المزعجة
+    # إزالة الأوسمة مثل [===LEVEL1===]
     clean_text = re.sub(r'\[===.*?===\]', '', report_text)
-    doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
-    p = doc.add_paragraph(clean_text)
-    p.alignment = 1 # محاذاة للوسط أو اليمين
+    # إزالة النجوم الزائدة التي يستخدمها الذكاء الاصطناعي للتحديد
+    clean_text = clean_text.replace('**', '').replace('*', '')
+    
+    # إضافة عنوان رئيسي منسق
+    heading = doc.add_heading('تقرير رادار الابتكار الاحترافي', 0)
+    heading.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    
+    # تقسيم النص إلى فقرات وإضافتها مع محاذاة لليمين
+    paragraphs = clean_text.split('\n')
+    for para in paragraphs:
+        if para.strip():
+            p = doc.add_paragraph(para.strip())
+            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            # ضبط اتجاه الفقرة ليكون من اليمين لليسار (RTL)
+            p.paragraph_format.right_to_left = True
+
     bio = BytesIO()
     doc.save(bio)
     return bio.getvalue()
-
 # --- 3. المحرك المباشر المتوافق مع Gemini Flash Latest ---
 def call_pro_api(prompt, image_file=None):
     try:
