@@ -115,8 +115,8 @@ def call_pro_api(prompt, image_file=None):
     api_key = st.secrets["PRO_API_KEY"]
     
     # الرابط المستقر (v1) لضمان عدم حدوث 403 أو 404
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-flash-latest:generateContent?key={api_key}"
-    
+   # الرابط المتوافق تماماً مع الموديل gemini-flash-latest والمقبول جغرافياً
+url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
     
     try:
