@@ -48,7 +48,7 @@ def create_docx(report_text):
 
     doc = Document()
 
-    # تنظيف النص من الشوائب البرمجية
+    # تنظيف النص تماماً من الأوسمة والنجوم
     clean_text = re.sub(r'\[===.*?===\]', '', report_text)
     clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
@@ -63,9 +63,9 @@ def create_docx(report_text):
     run_title.font.name = 'Arial'
     run_title._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-    doc.add_paragraph() # مسافة
+    doc.add_paragraph() # مسافة جمالية
 
-    # --- 2. متن التقرير مع عناوين عريضة ---
+    # --- 2. متن التقرير ---
     for para in clean_text.split('\n'):
         text = para.strip()
         if text:
@@ -77,29 +77,28 @@ def create_docx(report_text):
             run.font.name = 'Arial'
             run._element.get_or_add_rPr().get_or_add_rtl().val = True
             
-            # تمييز العناوين الفرعية (جعلها عريضة وكبيرة)
+            # تمييز العناوين الفرعية بجعلها عريضة وكبيرة
             keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
             if any(h in text for h in keywords):
                 run.bold = True
                 run.font.size = Pt(14)
-                # إضافة سطر فارغ بسيط قبل العنوان لتمييزه
-                p.paragraph_format.space_before = Pt(12)
+                p.paragraph_format.space_before = Pt(10)
             else:
                 run.font.size = Pt(11)
 
-    # --- 3. حقوق الإعداد في أسفل التقرير ---
-    doc.add_paragraph() # مسافة قبل الخاتمة
+    # --- 3. حقوق الإعداد والتطوير في الأسفل تماماً ---
+    doc.add_paragraph() 
     p_footer = doc.add_paragraph()
     p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_footer.paragraph_format.right_to_left = True
     
-    # إضافة خط فاصل بسيط قبل الحقوق
-    run_line = p_footer.add_run("__________________")
+    run_line = p_footer.add_run("________________________________")
     doc.add_paragraph()
     
     p_credit = doc.add_paragraph()
     p_credit.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_credit.paragraph_format.right_to_left = True
+    
     run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
     run_credit.bold = True
     run_credit.font.size = Pt(10)
