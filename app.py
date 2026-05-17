@@ -40,6 +40,49 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 # --- 2. دالة إنشاء ملف Word (بخطوط عربية منسقة) ---
+# ==========================================
+# 1. دالة الاتصال بالمحرك (جوجل API) - نسخة بيتا الإقليمية المستقرة
+# ==========================================
+def call_pro_api(prompt, image_file=None):
+    if "PRO_API_KEY" not in st.secrets:
+        return "خطأ: مفتاح API غير موجود في إعدادات Secrets"
+        
+    api_key = st.secrets["PRO_API_KEY"]
+    
+    # الرابط المتوافق مع نسخة البيتا ليعمل في منطقتك دون مشاكل
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
+    headers = {'Content-Type': 'application/json'}
+    
+    try:
+        if image_file:
+            img_data = base64.b64encode(image_file.read()).decode('utf-8')
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"text": prompt},
+                        {"inline_data": {"mime_type": "image/jpeg", "data": img_data}}
+                    ]
+                }]
+            }
+        else:
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
+
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()['candidates'][0]['content']['parts'][0]['text']
+        else:
+            return f"خطأ في الاتصال: {response.status_code} - {response.text}"
+            
+    except Exception as e:
+        return f"فشل النظام في الاستجابة: {str(e)}"
+
+
+# ==========================================
+# 2. دالة توليد ملف الوورد المنسق (العناوين عريضة والحقوق في الأسفل)
+# ==========================================
 def create_docx(report_text):
     from docx import Document
     from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -52,7 +95,7 @@ def create_docx(report_text):
     clean_text = re.sub(r'\[===.*?===\]', '', report_text)
     clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
-    # --- 1. العنوان الرئيسي في الأعلى (مستقل وموجه لليمين) ---
+    # --- العنوان الرئيسي في الأعلى ---
     p_title = doc.add_paragraph()
     p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_title.paragraph_format.right_to_left = True
@@ -65,7 +108,7 @@ def create_docx(report_text):
 
     doc.add_paragraph() # مسافة جمالية
 
-    # --- 2. متن التقرير (العناوين عريضة والفقرات من اليمين) ---
+    # --- متن التقرير ---
     for para in clean_text.split('\n'):
         text = para.strip()
         if text:
@@ -77,7 +120,7 @@ def create_docx(report_text):
             run.font.name = 'Arial'
             run._element.get_or_add_rPr().get_or_add_rtl().val = True
             
-            # تمييز العناوين الفرعية بجعلها عريضة وكبيرة
+            # تمييز العناوين الفرعية لتكون عريضة وكبيرة
             keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
             if any(h in text for h in keywords):
                 run.bold = True
@@ -86,13 +129,12 @@ def create_docx(report_text):
             else:
                 run.font.size = Pt(11)
 
-    # --- 3. حقوق الإعداد والتطوير في أسفل التقرير تماماً ---
+    # --- حقوق الإعداد والتطوير في الأسفل تماماً ---
     doc.add_paragraph() 
     p_footer = doc.add_paragraph()
     p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_footer.paragraph_format.right_to_left = True
     
-    # خط فاصل أنيق قبل التوقيع
     run_line = p_footer.add_run("________________________________")
     doc.add_paragraph()
     
@@ -109,9 +151,6 @@ def create_docx(report_text):
     bio = BytesIO()
     doc.save(bio)
     return bio.getvalue()
-        else:
-            return f"خطأ في الاتصال: {response.status_code} - {response.text}"
-            
     except Exception as e:
         return f"فشل النظام في الاستجابة: {str(e)}"
 
