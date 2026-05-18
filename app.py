@@ -242,7 +242,7 @@ else:
         st.warning(f"**💡 توصية السيادة**\n\n{parts[5] if len(parts)>5 else 'جاري التحليل...'}")
 
     st.divider()
-   docx_file = create_docx(report, st.session_state.final_idea)
+    docx_file = create_docx(report, st.session_state.final_idea)
     
     if docx_file:
         st.download_button(
