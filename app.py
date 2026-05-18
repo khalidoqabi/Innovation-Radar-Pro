@@ -307,7 +307,7 @@ if not st.session_state.gate_passed:
                 [===/SCORE===]
 
                 [===SOVEREIGNTY===]
-                ### 💡 خامساً: توصية السيادة التسويقية المطلقة
+                ### 💡 خامساً: توصية الريادة التسويقية المطلقة
                 قدم التوصية الاستراتيجية الذهبية للمبتكر لفرض سيادته التجارية بناءً على حالته (تطويرية أو تصحيحية حازمة).
                 """
                 
@@ -350,7 +350,7 @@ else:
         score_status = "فرادة متوسطة - الفكرة تحتاج لتعميق الآلية التقنية 💡"
     else:
         score_color = "#ef4444"  # أحمر (تأديبي)
-        score_status = "معطيات شحيحة أو فكرة مكشوفة - الفكرة تفتقر للسيادة وتقع في منطقة الخطر ⚠️"
+        score_status = "معطيات شحيحة أو فكرة مكشوفة - الفكرة تفتقر للريادة الابتكارية وتقع في منطقة الخطر ⚠️"
 
     st.markdown(f"""
         <div style="background-color: #f8fafc; border-right: 6px solid {score_color}; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: right; direction: rtl;">
