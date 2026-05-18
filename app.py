@@ -90,20 +90,28 @@ def create_docx(report_text, idea_title):
         from docx import Document
         from docx.enum.text import WD_ALIGN_PARAGRAPH
         from docx.shared import Pt, RGBColor
+        from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
         import re
         from io import BytesIO
 
         doc = Document()
 
+        # ===================================================
+        # 🔥 الحل الجذري: إجبار المستند بالكامل على وضع RTL الصارم
+        # ===================================================
+        section = doc.sections[0]
+        sectPr = section._sectPr
+        bidi = OxmlElement('w:bidi')
+        bidi.set(qn('w:val'), '1')
+        sectPr.append(bidi)
+
         # 1. استخراج الرقم برمجياً قبل تنظيف النص لتنسيقه بشكل مخصص
         score_match = re.search(r'\[===SCORE===\]\s*(\d+)\s*\[===/SCORE===\]', report_text)
         innovation_score = score_match.group(1) if score_match else None
 
-        # 2. تنظيف النص تماماً وبشكل صارم من كل الأوسمة (بما فيها أوسمة السكور والرقم نفسه)
-        # هذا السطر يحذف وسام السكور وما بينهما لكي لا يظهر الرقم مجرداً في المتن
+        # 2. تنظيف النص تماماً وبشكل صارم من كل الأوسمة والنقاط الزائدة
         clean_text = re.sub(r'\[===SCORE===\].*?\[===/SCORE===\]', '', report_text, flags=re.DOTALL)
-        # تنظيف بقية الأوسمة والنجوم المتبقية
         clean_text = re.sub(r'\[===.*?===\]', '', clean_text)
         clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
@@ -139,15 +147,14 @@ def create_docx(report_text, idea_title):
         run_sub.font.color.rgb = RGBColor(100, 116, 139)
         run_sub._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-        # --- ج. إضافة مؤشر الفرادة بشكل رسمي مخصص داخل ملف الوورد (إذا وجد) ---
+        # --- ج. إضافة مؤشر الفرادة بشكل رسمي مخصص (موسط) ---
         if innovation_score:
             p_score = doc.add_paragraph()
             p_score.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p_score.paragraph_format.right_to_left = True
             p_score.paragraph_format.space_before = Pt(6)
-            p_score.paragraph_format.space_after = Pt(24) # مسافة جمالية قبل المتن
+            p_score.paragraph_format.space_after = Pt(24)
             
-            # تلوين النسبة بناءً على قيمتها لتطابق المتصفح
             score_num = int(innovation_score)
             SCORE_COLOR = RGBColor(16, 185, 129) if score_num >= 85 else (RGBColor(245, 158, 11) if score_num >= 65 else RGBColor(239, 68, 68))
             
@@ -166,21 +173,23 @@ def create_docx(report_text, idea_title):
         else:
             p_sub.paragraph_format.space_after = Pt(24)
 
-        # --- د. متن التقرير (الضبط الكامل) ---
+        # --- د. متن التقرير (الضبط الكامل المستقر) ---
         for para in clean_text.split('\n'):
             text = para.strip()
             if text:
                 p = doc.add_paragraph()
                 p.paragraph_format.right_to_left = True
-                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # تفعيل الكشيدة والضبط التلقائي من اليمين
                 p.paragraph_format.line_spacing = 1.3
                 
                 run = p.add_run(text)
                 run.font.name = 'Arial'
                 
+                # تفعيل خصائص الـ RTL والـ bidi على مستوى الخط نفسه
                 rPr = run._element.get_or_add_rPr()
                 rPr.get_or_add_rtl().val = True
                 
+                # إعدادات العناوين الفرعية
                 keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
                 if any(h in text for h in keywords):
                     run.bold = True
@@ -189,11 +198,12 @@ def create_docx(report_text, idea_title):
                     p.paragraph_format.space_before = Pt(14)
                     p.paragraph_format.space_after = Pt(6)
                 else:
+                    # الفقرات العادية
                     run.font.size = Pt(14)
                     run.font.color.rgb = TEXT_COLOR
                     p.paragraph_format.space_after = Pt(8)
 
-        # --- هـ. حقوق الإعداد والتطوير في الأسفل تماماً ---
+        # --- هـ. حقوق الإعداد والتطوير في الأسفل ---
         doc.add_paragraph() 
         p_footer = doc.add_paragraph()
         p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
