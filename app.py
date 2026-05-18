@@ -2,10 +2,13 @@ import streamlit as st
 import requests
 import re
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
+from docx.oxml.ns import qn
 from io import BytesIO
 import base64
 
-# --- 1. إعدادات الهوية البصرية وتنسيق RTL (حل مشكلة الاتجاه والتلاصق) ---
+# --- 1. إعدادات الهوية البصرية وتنسيق RTL ---
 st.set_page_config(page_title="Innovation Radar Pro v2", layout="wide")
 st.markdown("""
     <style>
@@ -23,7 +26,7 @@ st.markdown("""
         direction: rtl !important;
         text-align: right !important;
         line-height: 1.6 !important;
-        display: block; /* يضمن عدم التمركز في الوسط */
+        display: block; 
     }
 
     /* ضمان محاذاة العناوين لليمين */
@@ -39,7 +42,7 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-# --- 2. دالة إنشاء ملف Word (بخطوط عربية منسقة) ---
+
 # ==========================================
 # 1. دالة الاتصال بالمحرك (جوجل API) - نسخة بيتا الإقليمية المستقرة
 # ==========================================
@@ -49,7 +52,6 @@ def call_pro_api(prompt, image_file=None):
         
     api_key = st.secrets["PRO_API_KEY"]
     
-    # الرابط المتوافق مع نسخة البيتا ليعمل في منطقتك دون مشاكل
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
     
@@ -81,78 +83,77 @@ def call_pro_api(prompt, image_file=None):
 
 
 # ==========================================
-# 2. دالة توليد ملف الوورد المنسق (العناوين عريضة والحقوق في الأسفل)
+# 2. دالة توليد ملف الوورد المنسق (تم إصلاح الـ try و except)
 # ==========================================
 def create_docx(report_text):
-    from docx import Document
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.shared import Pt
-    from docx.oxml.ns import qn
+    try:
+        doc = Document()
 
-    doc = Document()
+        # تنظيف النص تماماً من الأوسمة والنجوم
+        clean_text = re.sub(r'\[===.*?===\]', '', report_text)
+        clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
-    # تنظيف النص تماماً من الأوسمة والنجوم
-    clean_text = re.sub(r'\[===.*?===\]', '', report_text)
-    clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
+        # --- العنوان الرئيسي في الأعلى ---
+        p_title = doc.add_paragraph()
+        p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_title.paragraph_format.right_to_left = True
+        
+        run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي')
+        run_title.bold = True
+        run_title.font.size = Pt(18)
+        run_title.font.name = 'Arial'
+        run_title._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-    # --- العنوان الرئيسي في الأعلى ---
-    p_title = doc.add_paragraph()
-    p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_title.paragraph_format.right_to_left = True
-    
-    run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي')
-    run_title.bold = True
-    run_title.font.size = Pt(18)
-    run_title.font.name = 'Arial'
-    run_title._element.get_or_add_rPr().get_or_add_rtl().val = True
+        doc.add_paragraph() # مسافة جمالية
 
-    doc.add_paragraph() # مسافة جمالية
+        # --- متن التقرير ---
+        for para in clean_text.split('\n'):
+            text = para.strip()
+            if text:
+                p = doc.add_paragraph()
+                p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                p.paragraph_format.right_to_left = True
+                
+                run = p.add_run(text)
+                run.font.name = 'Arial'
+                run._element.get_or_add_rPr().get_or_add_rtl().val = True
+                
+                # تمييز العناوين الفرعية لتكون عريضة وكبيرة
+                keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
+                if any(h in text for h in keywords):
+                    run.bold = True
+                    run.font.size = Pt(14)
+                    p.paragraph_format.space_before = Pt(10)
+                else:
+                    run.font.size = Pt(11)
 
-    # --- متن التقرير ---
-    for para in clean_text.split('\n'):
-        text = para.strip()
-        if text:
-            p = doc.add_paragraph()
-            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            p.paragraph_format.right_to_left = True
-            
-            run = p.add_run(text)
-            run.font.name = 'Arial'
-            run._element.get_or_add_rPr().get_or_add_rtl().val = True
-            
-            # تمييز العناوين الفرعية لتكون عريضة وكبيرة
-            keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
-            if any(h in text for h in keywords):
-                run.bold = True
-                run.font.size = Pt(14)
-                p.paragraph_format.space_before = Pt(10)
-            else:
-                run.font.size = Pt(11)
+        # --- حقوق الإعداد والتطوير في الأسفل تماماً ---
+        doc.add_paragraph() 
+        p_footer = doc.add_paragraph()
+        p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_footer.paragraph_format.right_to_left = True
+        
+        run_line = p_footer.add_run("________________________________")
+        doc.add_paragraph()
+        
+        p_credit = doc.add_paragraph()
+        p_credit.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_credit.paragraph_format.right_to_left = True
+        
+        run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
+        run_credit.bold = True
+        run_credit.font.size = Pt(10)
+        run_credit.font.name = 'Arial'
+        run_credit._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-    # --- حقوق الإعداد والتطوير في الأسفل تماماً ---
-    doc.add_paragraph() 
-    p_footer = doc.add_paragraph()
-    p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_footer.paragraph_format.right_to_left = True
-    
-    run_line = p_footer.add_run("________________________________")
-    doc.add_paragraph()
-    
-    p_credit = doc.add_paragraph()
-    p_credit.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_credit.paragraph_format.right_to_left = True
-    
-    run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
-    run_credit.bold = True
-    run_credit.font.size = Pt(10)
-    run_credit.font.name = 'Arial'
-    run_credit._element.get_or_add_rPr().get_or_add_rtl().val = True
-
-    bio = BytesIO()
-    doc.save(bio)
-    return bio.getvalue()
+        bio = BytesIO()
+        doc.save(bio)
+        return bio.getvalue()
+        
     except Exception as e:
-        return f"فشل النظام في الاستجابة: {str(e)}"
+        # في حال حدوث خطأ، نعيد نصاً يوضح المشكلة بدلاً من إيقاف التطبيق
+        st.error(f"حدث خطأ أثناء توليد ملف Word: {str(e)}")
+        return None
 
 # --- 4. واجهة المستخدم ---
 st.markdown("<h1 style='text-align:center;'>🛡️ رادار الابتكار Pro</h1>", unsafe_allow_html=True)
@@ -160,7 +161,6 @@ st.markdown("<h1 style='text-align:center;'>🛡️ رادار الابتكار 
 if not st.session_state.get("gate_passed"):
     col1, col2 = st.columns([2, 1])
     with col1:
-        # placeholder يمنع التلاصق البصري في خانة الإدخال
         idea_input = st.text_area("✍️ اشرح فكرتك التقنية بالتفصيل:", height=200, placeholder="مثال: نظام ذكي لصيانة الجسور باستخدام الدرون...")
     with col2:
         uploaded_file = st.file_uploader("🖼️ ارفع رسم كروكي (اختياري):", type=["jpg", "png", "jpeg"])
@@ -172,10 +172,8 @@ if not st.session_state.get("gate_passed"):
             st.session_state.gate_passed = True
             st.rerun()
 else:
-    # المرحلة الثانية: التحليل (يحدث فقط مرة واحدة بفضل Session State)
     if st.session_state.get("full_report") is None:
         with st.spinner("جاري تحليل البيانات والصور وتوليد التقرير المنسق..."):
-            # البرومبت المطور لضمان عدم تلاصق الكلمات في الرد
             prompt = f"""
             بصفتك خبير براءات اختراع عالمي، حلل الفكرة (والصورة المرفقة إن وجدت): "{st.session_state.final_idea}"
             وقدم تقريراً احترافياً باللغة العربية. 
@@ -186,10 +184,8 @@ else:
             [===AUDIT===] نسبة الفرادة المحتملة
             [===SOVEREIGNTY===] توصية السيادة التسويقية
             """
-            # استدعاء المحرك
             st.session_state.full_report = call_pro_api(prompt, st.session_state.uploaded_file)
 
-    report = st.session_state.full_report
     report = st.session_state.full_report
     parts = re.split(r'\[===LEVEL[1-3]===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', report)
     
@@ -211,12 +207,14 @@ else:
 
     st.divider()
     docx_file = create_docx(report)
-    st.download_button(
-        label="📥 تحميل التقرير كملف Word منسق",
-        data=docx_file,
-        file_name="Innovation_Report_Pro.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    
+    if docx_file:
+        st.download_button(
+            label="📥 تحميل التقرير كملف Word منسق",
+            data=docx_file,
+            file_name="Innovation_Report_Pro.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
 
     if st.button("🔄 فحص ابتكار جديد"):
         st.session_state.clear()
