@@ -100,13 +100,13 @@ def create_docx(report_text, idea_title):
         clean_text = re.sub(r'\[===.*?===\]', '', report_text)
         clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
-        # استخلاص سطر واحد مختصر كعنوان للابتكار (أول 60 حرف أو السطر الأول)
+        # استخلاص سطر واحد مختصر كعنوان للابتكار
         short_title = idea_title.split('\n')[0].strip()
         if len(short_title) > 60:
             short_title = short_title[:60] + "..."
 
         # تعريف الألوان الرسمية
-        MAIN_COLOR = RGBColor(30, 58, 138)  # أزرق داكن #1e3a8a ليعكس الهوية البصرية
+        MAIN_COLOR = RGBColor(30, 58, 138)  # أزرق داكن
         TEXT_COLOR = RGBColor(0, 0, 0)      # أسود للمتن
 
         # --- 1. العنوان الرئيسي في الأعلى (في المنتصف) ---
@@ -125,28 +125,31 @@ def create_docx(report_text, idea_title):
         p_sub = doc.add_paragraph()
         p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_sub.paragraph_format.right_to_left = True
-        p_sub.paragraph_format.space_after = Pt(24) # مسافة جمالية قبل بدء التقرير
+        p_sub.paragraph_format.space_after = Pt(24)
         
         run_sub = p_sub.add_run(f"عنوان الابتكار: {short_title}")
-        run_sub.bold = False
         run_sub.font.size = Pt(14)
         run_sub.font.name = 'Arial'
-        run_sub.font.color.rgb = RGBColor(100, 116, 139) # لون رمادي مميز وخاص بالعنوان الفرعي
+        run_sub.font.color.rgb = RGBColor(100, 116, 139) # لون رمادي
         run_sub._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-        # --- 3. متن التقرير (الضبط الكامل Justify) ---
+        # --- 3. متن التقرير ---
         for para in clean_text.split('\n'):
             text = para.strip()
             if text:
                 p = doc.add_paragraph()
-                # تطبيق الضبط الكامل لتفعيل "الكشيدة" التلقائية وتنسيق الحواف
-                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                
+                # الحل هنا: دمج الاتجاه من اليمين لليصار مع الضبط الكامل
                 p.paragraph_format.right_to_left = True
-                p.paragraph_format.line_spacing = 1.3 # تباعد أسطر مريح للقراءة
+                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                p.paragraph_format.line_spacing = 1.3
                 
                 run = p.add_run(text)
                 run.font.name = 'Arial'
-                run._element.get_or_add_rPr().get_or_add_rtl().val = True
+                
+                # تأكيد لغة النص العربي داخل الـ Run نفسه لمنعه من الهروب لليسار
+                rPr = run._element.get_or_add_rPr()
+                rPr.get_or_add_rtl().val = True
                 
                 # تمييز العناوين الفرعية لتكون عريضة وبحجم 16 وباللون الأزرق الداكن
                 keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
