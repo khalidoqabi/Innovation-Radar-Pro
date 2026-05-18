@@ -85,49 +85,84 @@ def call_pro_api(prompt, image_file=None):
 # ==========================================
 # 2. دالة توليد ملف الوورد المنسق (تم إصلاح الـ try و except)
 # ==========================================
-def create_docx(report_text):
+def create_docx(report_text, idea_title):
     try:
+        from docx import Document
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.shared import Pt, RGBColor
+        from docx.oxml.ns import qn
+        import re
+        from io import BytesIO
+
         doc = Document()
 
         # تنظيف النص تماماً من الأوسمة والنجوم
         clean_text = re.sub(r'\[===.*?===\]', '', report_text)
         clean_text = clean_text.replace('###', '').replace('---', '').replace('**', '').replace('*', '')
 
-        # --- العنوان الرئيسي في الأعلى ---
+        # استخلاص سطر واحد مختصر كعنوان للابتكار (أول 60 حرف أو السطر الأول)
+        short_title = idea_title.split('\n')[0].strip()
+        if len(short_title) > 60:
+            short_title = short_title[:60] + "..."
+
+        # تعريف الألوان الرسمية
+        MAIN_COLOR = RGBColor(30, 58, 138)  # أزرق داكن #1e3a8a ليعكس الهوية البصرية
+        TEXT_COLOR = RGBColor(0, 0, 0)      # أسود للمتن
+
+        # --- 1. العنوان الرئيسي في الأعلى (في المنتصف) ---
         p_title = doc.add_paragraph()
-        p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_title.paragraph_format.right_to_left = True
         
         run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي')
         run_title.bold = True
         run_title.font.size = Pt(18)
         run_title.font.name = 'Arial'
+        run_title.font.color.rgb = MAIN_COLOR
         run_title._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-        doc.add_paragraph() # مسافة جمالية
+        # --- 2. عنوان الابتكار المخصص (في المنتصف تحت العنوان الرئيسي) ---
+        p_sub = doc.add_paragraph()
+        p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_sub.paragraph_format.right_to_left = True
+        p_sub.paragraph_format.space_after = Pt(24) # مسافة جمالية قبل بدء التقرير
+        
+        run_sub = p_sub.add_run(f"عنوان الابتكار: {short_title}")
+        run_sub.bold = False
+        run_sub.font.size = Pt(14)
+        run_sub.font.name = 'Arial'
+        run_sub.font.color.rgb = RGBColor(100, 116, 139) # لون رمادي مميز وخاص بالعنوان الفرعي
+        run_sub._element.get_or_add_rPr().get_or_add_rtl().val = True
 
-        # --- متن التقرير ---
+        # --- 3. متن التقرير (الضبط الكامل Justify) ---
         for para in clean_text.split('\n'):
             text = para.strip()
             if text:
                 p = doc.add_paragraph()
-                p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                # تطبيق الضبط الكامل لتفعيل "الكشيدة" التلقائية وتنسيق الحواف
+                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                 p.paragraph_format.right_to_left = True
+                p.paragraph_format.line_spacing = 1.3 # تباعد أسطر مريح للقراءة
                 
                 run = p.add_run(text)
                 run.font.name = 'Arial'
                 run._element.get_or_add_rPr().get_or_add_rtl().val = True
                 
-                # تمييز العناوين الفرعية لتكون عريضة وكبيرة
+                # تمييز العناوين الفرعية لتكون عريضة وبحجم 16 وباللون الأزرق الداكن
                 keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
                 if any(h in text for h in keywords):
                     run.bold = True
-                    run.font.size = Pt(14)
-                    p.paragraph_format.space_before = Pt(10)
+                    run.font.size = Pt(16)
+                    run.font.color.rgb = MAIN_COLOR
+                    p.paragraph_format.space_before = Pt(14)
+                    p.paragraph_format.space_after = Pt(6)
                 else:
-                    run.font.size = Pt(11)
+                    # الفقرات العادية بحجم 14 ولون أسود
+                    run.font.size = Pt(14)
+                    run.font.color.rgb = TEXT_COLOR
+                    p.paragraph_format.space_after = Pt(8)
 
-        # --- حقوق الإعداد والتطوير في الأسفل تماماً ---
+        # --- 4. حقوق الإعداد والتطوير في الأسفل تماماً ---
         doc.add_paragraph() 
         p_footer = doc.add_paragraph()
         p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -142,8 +177,9 @@ def create_docx(report_text):
         
         run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
         run_credit.bold = True
-        run_credit.font.size = Pt(10)
+        run_credit.font.size = Pt(11)
         run_credit.font.name = 'Arial'
+        run_credit.font.color.rgb = MAIN_COLOR
         run_credit._element.get_or_add_rPr().get_or_add_rtl().val = True
 
         bio = BytesIO()
@@ -151,7 +187,7 @@ def create_docx(report_text):
         return bio.getvalue()
         
     except Exception as e:
-        # في حال حدوث خطأ، نعيد نصاً يوضح المشكلة بدلاً من إيقاف التطبيق
+        import streamlit as st
         st.error(f"حدث خطأ أثناء توليد ملف Word: {str(e)}")
         return None
 
