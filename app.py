@@ -194,10 +194,16 @@ def create_docx(report_text, idea_title):
         st.error(f"حدث خطأ أثناء توليد ملف Word: {str(e)}")
         return None
 
-# --- 4. واجهة المستخدم ---
+# --- 4. واجهة المستخدم (تمت إعادة الهيكلة وتطبيق درع حماية الحصص) ---
 st.markdown("<h1 style='text-align:center;'>🛡️ رادار الابتكار Pro</h1>", unsafe_allow_html=True)
 
-if not st.session_state.get("gate_passed"):
+# تهيئة المتغيرات في الـ session_state إذا لم تكن موجودة
+if "gate_passed" not in st.session_state:
+    st.session_state.gate_passed = False
+if "full_report" not in st.session_state:
+    st.session_state.full_report = None
+
+if not st.session_state.gate_passed:
     col1, col2 = st.columns([2, 1])
     with col1:
         idea_input = st.text_area("✍️ اشرح فكرتك التقنية بالتفصيل:", height=200, placeholder="مثال: نظام ذكي لصيانة الجسور باستخدام الدرون...")
@@ -206,28 +212,36 @@ if not st.session_state.get("gate_passed"):
     
     if st.button("بدء الفحص الاستراتيجي 🚀"):
         if idea_input:
-            st.session_state.final_idea = idea_input
-            st.session_state.uploaded_file = uploaded_file
-            st.session_state.gate_passed = True
-            st.rerun()
+            # نقل عملية الاتصال بالكامل إلى داخل حدث الضغط على الزر لحماية الحصص
+            with st.spinner("جاري تحليل البيانات والصور وتوليد التقرير المنسق..."):
+                
+                # صياغة البرومبت المطور
+                prompt = f"""
+                بصفتك خبير براءات اختراع عالمي، حلل الفكرة (والصورة المرفقة إن وجدت): "{idea_input}"
+                وقدم تقريراً احترافياً باللغة العربية. 
+                هام جداً: التزم بترك مسافات واضحة بين الكلمات والأسطر، واستخدم الأوسمة التالية حصراً للتقسيم:
+                [===LEVEL1===] التشخيص الاستراتيجي والمنافسين
+                [===LEVEL2===] المطالبات التقنية والمراجع
+                [===LEVEL3===] الجدوى الاقتصادية وخارطة الطريق
+                [===AUDIT===] نسبة الفرادة المحتملة
+                [===SOVEREIGNTY===] توصية السيادة التسويقية
+                """
+                
+                # استدعاء المحرك وحفظ النتيجة في الـ session_state فوراً
+                st.session_state.full_report = call_pro_api(prompt, uploaded_file)
+                st.session_state.final_idea = idea_input
+                st.session_state.gate_passed = True
+                
+                # إعادة تحميل التطبيق للانتقال للمرحلة الثانية والبيانات جاهزة تماماً
+                st.rerun()
 else:
-    if st.session_state.get("full_report") is None:
-        with st.spinner("جاري تحليل البيانات والصور وتوليد التقرير المنسق..."):
-            prompt = f"""
-            بصفتك خبير براءات اختراع عالمي، حلل الفكرة (والصورة المرفقة إن وجدت): "{st.session_state.final_idea}"
-            وقدم تقريراً احترافياً باللغة العربية. 
-            هام جداً: التزم بترك مسافات واضحة بين الكلمات والأسطر، واستخدم الأوسمة التالية حصراً للتقسيم:
-            [===LEVEL1===] التشخيص الاستراتيجي والمنافسين
-            [===LEVEL2===] المطالبات التقنية والمراجع
-            [===LEVEL3===] الجدوى الاقتصادية وخارطة الطريق
-            [===AUDIT===] نسبة الفرادة المحتملة
-            [===SOVEREIGNTY===] توصية السيادة التسويقية
-            """
-            st.session_state.full_report = call_pro_api(prompt, st.session_state.uploaded_file)
-
+    # المرحلة الثانية: العرض فقط (لا يوجد أي اتصال بالـ API هنا)
     report = st.session_state.full_report
+    
+    # تفكيك التقرير بناءً على الأوسمة
     parts = re.split(r'\[===LEVEL[1-3]===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', report)
     
+    # عرض التبويبات المتناسقة للمستخدم
     tab1, tab2, tab3 = st.tabs(["📊 التشخيص الاستراتيجي", "🔧 المراجع التقنية", "🛣️ خارطة التنفيذ"])
     
     with tab1:
@@ -245,6 +259,8 @@ else:
         st.warning(f"**💡 توصية السيادة**\n\n{parts[5] if len(parts)>5 else 'جاري التحليل...'}")
 
     st.divider()
+    
+    # توليد ملف الوورد المنسق (يمرر التقرير واسم الابتكار المخزن مسبقاً)
     docx_file = create_docx(report, st.session_state.final_idea)
     
     if docx_file:
@@ -256,5 +272,6 @@ else:
         )
 
     if st.button("🔄 فحص ابتكار جديد"):
+        # تفريغ الذاكرة بالكامل عند رغبة المستخدم الفعلية في فحص فكرة جديدة
         st.session_state.clear()
         st.rerun()
