@@ -366,7 +366,7 @@ else:
     """, unsafe_allow_html=True)
 
     # عرض التبويبات الثلاثة الاستشارية
-    tab1, tab2, tab3 = st.tabs(["📊 التشخيص والجوهر الهندسي", "🔧 المطالبات والتحصين"، "🛣️ خطة السيادة والتنفيذ"])
+  tab1, tab2, tab3 = st.tabs(["📊 التشخيص والجوهر الهندسي", "🔧 المطالبات والتحصين", "🛣️ خطة السيادة والتنفيذ"])
     
     with tab1:
         st.markdown(f"<div style='direction:rtl; text-align:right;'>{level1_text}</div>", unsafe_allow_html=True)
