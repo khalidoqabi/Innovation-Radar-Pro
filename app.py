@@ -172,13 +172,13 @@ def create_docx(report_text, idea_title):
         else:
             p_sub.paragraph_format.space_after = Pt(24)
 
-        # --- د. متن التقرير (الضبط الكامل المستقر) ---
+# --- د. متن التقرير (التوسيط الكامل) ---
         for para in clean_text.split('\n'):
             text = para.strip()
             if text:
                 p = doc.add_paragraph()
                 p.paragraph_format.right_to_left = True
-                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # تفعيل الكشيدة
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER  # جعل المحاذاة في المنتصف تماماً لكل الفقرات
                 p.paragraph_format.line_spacing = 1.3
                 
                 run = p.add_run(text)
@@ -367,7 +367,7 @@ else:
 
     # عرض التبويبات الثلاثة الاستشارية
 # عرض التبويبات الثلاثة الاستشارية
-    tab1, tab2, tab3 = st.tabs(["📊 التشخيص والجوهر الهندسي", "🔧 المطالبات والتحصين", "🛣️ خطة السيادة والتنفيذ"])
+    tab1, tab2, tab3 = st.tabs(["📊 التشخيص والجوهر الهندسي", "🔧 المطالبات والتحصين", "🛣️ خطة الريادة الابتكارية والتنفيذ"])
     
     with tab1:
         st.markdown(f"<div style='direction:rtl; text-align:right;'>{level1_text}</div>", unsafe_allow_html=True)
@@ -386,7 +386,7 @@ else:
     st.divider()
     
     # عرض التوصية الكبرى في صندوق بارز
-    st.warning(f"**💡 توصية السيادة الاستراتيجية (مستشارك الرقمي)**\n\n{sovereignty_text.replace('### خامساً: توصية السيادة التسويقية المطلقة', '')}")
+    st.warning(f"**💡 توصية الريادة الابتكارية (مستشارك الرقمي)**\n\n{sovereignty_text.replace('### خامساً: توصية السيادة التسويقية المطلقة', '')}")
 
     st.divider()
     
