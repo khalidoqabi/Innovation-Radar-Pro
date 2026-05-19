@@ -22,7 +22,7 @@ st.markdown("""
         font-family: 'Tajawal', sans-serif !important;
     }
     
-    /* منع التوسيط نهائياً في النصوص والفقرات */
+    /* منع التوسيط في المتصفح للحفاظ على القراءة اليمينية المريحة */
     p, li, span, div, label {
         direction: rtl !important;
         text-align: right !important;
@@ -30,7 +30,7 @@ st.markdown("""
         display: block; 
     }
 
-    /* ضمان محاذاة العناوين لليمين */
+    /* ضمان محاذاة العناوين لليمين في المتصفح */
     h1, h2, h3, h4, h5, h6 {
         text-align: right !important;
         color: #1e3a8a !important;
@@ -84,7 +84,7 @@ def call_pro_api(prompt, image_file=None):
 
 
 # ==========================================
-# 3. دالة توليد ملف الوورد المنسق (ضبط كامل مع علامة bidi للأصل العربي)
+# 3. دالة توليد ملف الوورد المنسق (التوسيط الكامل بناءً على رغبتك)
 # ==========================================
 def create_docx(report_text, idea_title):
     try:
@@ -128,7 +128,7 @@ def create_docx(report_text, idea_title):
         p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_title.paragraph_format.right_to_left = True
         
-        run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي')
+        run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي') [cite: 1]
         run_title.bold = True
         run_title.font.size = Pt(18)
         run_title.font.name = 'Arial'
@@ -140,7 +140,7 @@ def create_docx(report_text, idea_title):
         p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_sub.paragraph_format.right_to_left = True
         
-        run_sub = p_sub.add_run(f"عنوان الابتكار: {short_title}")
+        run_sub = p_sub.add_run(f"عنوان الابتكار: {short_title}") [cite: 2]
         run_sub.font.size = Pt(14)
         run_sub.font.name = 'Arial'
         run_sub.font.color.rgb = RGBColor(100, 116, 139)
@@ -172,13 +172,13 @@ def create_docx(report_text, idea_title):
         else:
             p_sub.paragraph_format.space_after = Pt(24)
 
-# --- د. متن التقرير (التوسيط الكامل) ---
+        # --- د. متن التقرير (التوسيط الكامل بناءً على التحديث الصارم) ---
         for para in clean_text.split('\n'):
             text = para.strip()
             if text:
                 p = doc.add_paragraph()
                 p.paragraph_format.right_to_left = True
-                p.alignment = WD_ALIGN_PARAGRAPH.CENTER  # جعل المحاذاة في المنتصف تماماً لكل الفقرات
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER  # جعل كافة الفقرات موسطة تماماً في الصفحة
                 p.paragraph_format.line_spacing = 1.3
                 
                 run = p.add_run(text)
@@ -199,20 +199,20 @@ def create_docx(report_text, idea_title):
                     run.font.color.rgb = TEXT_COLOR
                     p.paragraph_format.space_after = Pt(8)
 
-        # --- هـ. حقوق الإعداد والتطوير في الأسفل ---
+        # --- هـ. حقوق الإعداد والتطوير في الأسفل (موسطة أيضاً) ---
         doc.add_paragraph() 
         p_footer = doc.add_paragraph()
-        p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_footer.paragraph_format.right_to_left = True
         
         run_line = p_footer.add_run("________________________________")
         doc.add_paragraph()
         
         p_credit = doc.add_paragraph()
-        p_credit.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_credit.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_credit.paragraph_format.right_to_left = True
         
-        run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
+        run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي') [cite: 57]
         run_credit.bold = True
         run_credit.font.size = Pt(11)
         run_credit.font.name = 'Arial'
@@ -229,7 +229,7 @@ def create_docx(report_text, idea_title):
 
 
 # ==========================================
-# 4. واجهة المستخدم (التوجيه الصارم وحماية الحصص)
+# 4. واجهة المستخدم (التوجيه الصارم، حماية الحصص والروابط الحية)
 # ==========================================
 st.markdown("<h1 style='text-align:center;'>🛡️ رادار الابتكار Pro</h1>", unsafe_allow_html=True)
 
@@ -242,7 +242,6 @@ if not st.session_state.gate_passed:
     col1, col2 = st.columns([2, 1])
     with col1:
         st.markdown("### 📋 استمارة الفحص البنائي للابتكار")
-        # تفكيك الواجهة إلى 3 خانات إلزامية وموجهة فكرياً للمبتكر
         input_1 = st.text_input("✍️ 1. اسم الابتكار ووظيفته الأساسية:", placeholder="مثال: خاتم ذكي لحساب السعرات الحرارية...")
         input_2 = st.text_area("🔧 2. الآلية التقنية (الخلطة السرية):", height=100, placeholder="كيف يعمل تقنياً؟ اذكر الحساسات، الخوارزميات، أو طريقة معالجة البيانات...")
         input_3 = st.text_area("🎯 3. المشكلة والفجوة في السوق:", height=100, placeholder="ما هي المشكلة التي يحلها؟ وما الذي يميّزه عن الساعات الذكية أو الحلول البديلة الحالية؟")
@@ -250,86 +249,79 @@ if not st.session_state.gate_passed:
         uploaded_file = st.file_uploader("🖼️ ارفع رسم كروكي أو مخطط هندسي (اختياري):", type=["jpg", "png", "jpeg"])
     
     if st.button("بدء الفحص الاستراتيجي 🚀"):
-        # حماية برمجية أولية: التأكد من ملء الحقول الثلاثة
         if input_1.strip() and input_2.strip() and input_3.strip():
-            with st.spinner("جاري تحليل البيانات والصور وتطبيق بروتوكول السيادة..."):
+            with st.spinner("جاري تحليل البيانات والصور وتطبيق بروتوكول الريادة الابتكارية..."):
                 
-                # دمج المدخلات الثلاثة في نص منظم ليقرأه المحرك ككتلة واحدة
                 full_user_idea = f"""
                 - اسم الابتكار ووظيفته: {input_1}
                 - الآلية التقنية المقترحة: {input_2}
                 - المشكلة والفجوة المستهدفة: {input_3}
                 """
                 
-                # صياغة البرومبت المدعم بـ "بروتوكول الحزم والعقاب للمدخلات الشحيحة"
                 prompt = f"""
-                بصفتك خبير براءات اختراع عالمي ومستشاراً استراتيجياً لابتكار القيمة وفرض السيادة التسويقية، حلل معطيات الابتكار الموزعة على الخانات التالية (والصورة المرفقة إن وجدت):
+                بصفتك خبير براءات اختراع عالمي ومستشاراً استراتيجياً لابتكار القيمة وفرض الريادة الابتكارية، حلل معطيات الابتكار الموزعة على الخانات التالية (والصورة المرفقة إن وجدت):
                 {full_user_idea}
 
                 ⚠️ قواعد صارمة وحاسمة للتقييم (بروتوكول الحزم):
                 إذا تبين لك أن المعطيات المدخلة في الخانات أعلاه شحيحة جداً، أو مكررة، أو عامة وخالية من "خلطة سرية أو آلية تقنية واضحة ومحددة"، أو أن المستخدم يتهرب من الإجابة الفنية، التزم تماماً بالآتي:
                 1. اصدر حكماً تاديبياً صارماً، واجعل التقييم النهائي الإجمالي في وسم [===SCORE===] منخفضاً جداً (بين 10 إلى 45 كحد أقصى) ليعكس واقعية ضعف الطرح التقني.
                 2. في قسم التشخيص، لا تقم باختراع أو تأليف أي تفاصيل هندسية أو حساسات من عندك نيابة عن المستخدم، بل واجهه بوضوح واكتب له: (بناءً على معطياتك الشحيحة، فكرتك مكشوفة تماماً ولا ترتقي لتسجيل براءة اختراع للأسباب التالية...).
-                3. في قسم خطة السيادة، تحوّل إلى موجه هندسي حازم، واكتب له "بروتوكول سد الفجوة التقنية" على شكل أسئلة هندسية وقانونية محددة يجب عليه البحث عنها وإجابتها ليرفع من قيمة فكرته.
+                3. في قسم خطة الريادة، تحوّل إلى موجه هندسي حازم، واكتب له "بروتوكول سد الفجوة التقنية" على شكل أسئلة هندسية وقانونية محددة يجب عليه البحث عنها وإجابتها ليرفع من قيمة فكرته.
 
                 أما إذا كانت المعطيات غنية وجادة ومتكاملة، فقم بإنتاج التقرير الاحترافي الكامل المعتاد.
                 التزم بالأوسمة التالية حصراً لتقسيم التقرير، واجعل الفراغات واضحة:
 
                 [===LEVEL1===] 
-                ### 📊 أولاً: التشخيص الاستراتيجي والجوهر الهندسي
-                1. تفكيك المنظومة التقنية الحالية (أو نقد المعطيات إن كانت ناقصة).
-                2. السيناريو التشغيلي والديناميكي على أرض الواقع.
+                ### 📊 أولاً: التشخيص الاستراتيجي والجوهر الهندسي [cite: 3]
+                1. تفكيك المنظومة التقنية الحالية (أو نقد المعطيات إن كانت ناقصة). [cite: 4]
+                2. السيناريو التشغيلي والديناميكي على أرض الواقع. [cite: 9]
 
                 [===COMPETITORS_TABLE===]
-                صغ جدول مقارنة بالمؤشرات (Markdown Table) يقارن هذه المعطيات مع أبرز 3 منافسين بناءً على الأعمدة التالية حصراً: (المنافس | الفجوة التقنية لديه | ميزتك التنافسية الصارمة أو الفجوة التي يجب عليك سدها لتنافسه). لا تكتب أي نص خارج حدود الجدول في هذا القسم.
+                صغ جدول مقارنة بالمؤشرات (Markdown Table) يقارن هذه المعطيات مع أبرز 3 منافسين بناءً على الأعمدة التالية حصراً: (المنافس | الفجوة التقنية لديه | ميزتك التنافسية الصارمة أو الفجوة التي يجب عليك سدها لتنافسه). لا تكتب أي نص خارج حدود الجدول في هذا القسم. [cite: 15]
 
                 [===LEVEL2===]
-                ### 🔧 ثانياً: المطالبات التقنية والمراجع القانونية
-                1. صياغة مسودة المطالبات التقنية (Patent Claims) بناءً على ما قدمه (أو توضيح استحالة الصياغة لغياب الآلية).
-                2. الفن السابق (Prior Art): الثغرات في براءات الاختراع الحالية وكيف تتجاوزها هذه الفكرة.
+                ### 🔧 ثانياً: المطالبات التقنية والمراجع القانونية [cite: 23]
+                1. صياغة مسودة المطالبات التقنية (Patent Claims) بناءً على ما قدمه (أو توضيح استحالة الصياغة لغياب الآلية). [cite: 24]
+                2. الفن السابق (Prior Art): الثغرات في براءات الاختراع الحالية وكيف تتجاوزها هذه الفكرة. [cite: 28]
 
                 [===LEVEL3===]
-                ### 🛣️ ثالثاً: الجدوى الاقتصادية وخارطة السيادة
-                1. نموذج فرض السيادة وحماية الهندسة العكسية.
-                2. خارطة الطريق التنفيذية وسد الفجوة المعرفية.
+                ### 🛣️ ثالثاً: الجدوى الاقتصادية وخارطة الريادة الابتكارية [cite: 32]
+                1. نموذج فرض الريادة وحماية الهندسة العكسية. [cite: 33]
+                2. خارطة الطريق التنفيذية وسد الفجوة المعرفية. [cite: 37]
 
                 [===AUDIT===]
-                ### ⭐ رابعاً: تفصيل مؤشر الفرادة
-                قم بتقييم الفكرة من 100 بناءً على الأوزان التالية مع تبرير النسبة الممنوحة باختصار شديد:
-                1. الجدة وعدم وجود فن سابق (30%)
-                2. الخطوة الابتكارية وعدم البداهة (25%)
-                3. تميز البنية الهندسية وتدفق البيانات (15%)
-                4. القابلية للتطبيق وحل المشكلة التقنية (15%)
-                5. صعوبة الهندسة العكسية وبناء الخندق المائي (15%)
+                ### ⭐ رابعاً: تفصيل مؤشر الفرادة [cite: 42]
+                قم بتقييم الفكرة من 100 بناءً على الأوزان التالية مع تبرير النسبة الممنوحة باختصار شديد: [cite: 42]
+                1. الجدة وعدم وجود فن سابق (30%) [cite: 43]
+                2. الخطوة الابتكارية وعدم البداهة (25%) [cite: 44]
+                3. تميز البنية الهندسية وتدفق البيانات (15%) [cite: 45]
+                4. القابلية للتطبيق وحل المشكلة التقنية (15%) [cite: 46]
+                5. صعوبة الهندسة العكسية وبناء الخندق المائي (15%) [cite: 47]
 
                 [===SCORE===]
-                اكتب الرقم الإجمالي النهائي فقط لنسبة الفرادة الموزونة بين الأوسمة (رقم مجرد فقط)، مثال: 75
+                اكتب الرقم الإجمالي النهائي فقط لنسبة الفرادة الموزونة بين الأوسمة (رقم مجرد فقط)، مثال: 75 [cite: 48]
                 [===/SCORE===]
 
                 [===SOVEREIGNTY===]
-                ### 💡 خامساً: توصية الريادة التسويقية المطلقة
-                قدم التوصية الاستراتيجية الذهبية للمبتكر لفرض سيادته التجارية بناءً على حالته (تطويرية أو تصحيحية حازمة).
+                ### 💡 خامساً: توصية الريادة الابتكارية المطلقة [cite: 49]
+                قدم التوصية الاستراتيجية الذهبية للمبتكر لفرض ريادته التجارية بناءً على حالته (تطويرية أو تصحيحية حازمة).
                 """
                 
-                # الاتصال وحفظ النتيجة في الـ session_state لحماية الحصص
                 st.session_state.full_report = call_pro_api(prompt, uploaded_file)
-                st.session_state.final_idea = input_1 # استخدام اسم الابتكار كعنوان
+                st.session_state.final_idea = input_1 
                 st.session_state.gate_passed = True
                 st.rerun()
         else:
             st.error("⚠️ من فضلك، يجب ملء الخانات الثلاث الإلزامية بالكامل لتفعيل فحص الرادار!")
 else:
-    # المرحلة الثانية: العرض البصري الآمن (محمية بالكامل من الـ Re-requests)
+    # المرحلة الثانية: العرض البصري الآمن والمحمي 100%
     report = st.session_state.full_report
     
-    # استخراج رقم النسبة الإجمالية عبر الـ Regex
     score_match = re.search(r'\[===SCORE===\]\s*(\d+)\s*\[===/SCORE===\]', report)
     innovation_score = int(score_match.group(1)) if score_match else 75
         
-    # تنظيف النص المعروض من أوسمة السكور
     clean_report = re.sub(r'\[===SCORE===\].*?\[===/SCORE===\]', '', report, flags=re.DOTALL)
     
-    # تفكيك أجزاء البروتوكول الحازم
     parts = re.split(r'\[===LEVEL[1-3]===\]|\[===COMPETITORS_TABLE===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', clean_report)
     
     level1_text = parts[1] if len(parts) > 1 else report
@@ -339,22 +331,21 @@ else:
     audit_text = parts[5] if len(parts) > 5 else ""
     sovereignty_text = parts[6] if len(parts) > 6 else ""
 
-    # عرض بطاقة مؤشر الفرادة المتفاعلة لونياً (عقابي / ترحيبي)
     st.markdown("### 🎯 التقييم الفوري ومستوى جدية الابتكار")
     
     if innovation_score >= 85:
         score_color = "#10b981"  # أخضر
-        score_status = "فرادة استثنائية - خندق مائي حصين وجاهز للتحصين 🛡️"
+        score_status = "ريادة استثنائية - خندق مائي حصين وجاهز للتحصين 🛡️"
     elif innovation_score >= 50:
         score_color = "#f59e0b"  # برتقالي ذهبي
-        score_status = "فرادة متوسطة - الفكرة تحتاج لتعميق الآلية التقنية 💡"
+        score_status = "ريادة متوسطة - الفكرة تحتاج لتعميق الآلية التقنية 💡"
     else:
-        score_color = "#ef4444"  # أحمر (تأديبي)
-        score_status = "معطيات شحيحة أو فكرة مكشوفة - الفكرة تفتقر للريادة الابتكارية وتقع في منطقة الخطر ⚠️"
+        score_color = "#ef4444"  # أحمر
+        score_status = "معطيات شحيحة - الفكرة تفتقر للريادة وتقع في منطقة الخطر ⚠️"
 
     st.markdown(f"""
         <div style="background-color: #f8fafc; border-right: 6px solid {score_color}; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: right; direction: rtl;">
-            <span style="font-size: 14pt; color: #64748b; font-weight: 500;">مؤشر الفرادة المحتملة للابتكار بناءً على معطياتك الحالية:</span>
+            <span style="font-size: 14pt; color: #64748b; font-weight: 500;">مؤشر الريادة الابتكارية المحتملة بناءً على معطياتك الحالية:</span>
             <div style="display: block; margin: 10px 0;">
                 <span style="font-size: 36pt; font-weight: bold; color: {score_color};">{innovation_score}%</span>
                 <span style="font-size: 14pt; font-weight: bold; color: #1e3a8a; margin-right: 15px;">({score_status})</span>
@@ -365,19 +356,40 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-    # عرض التبويبات الثلاثة الاستشارية
-# عرض التبويبات الثلاثة الاستشارية
-    tab1, tab2, tab3 = st.tabs(["📊 التشخيص والجوهر الهندسي", "🔧 المطالبات والتحصين", "🛣️ خطة الريادة الابتكارية والتنفيذ"])
+    # عرض التبويبات الثلاثة الاستشارية المعدلة بـ "الريادة الابتكارية"
+    tab1, tab2, tab3 = st.tabs(["📊 التشخيص والجوهر الهندسي", "🔧 المطالبات والتحصين", "🛣️ خطة الريادة الابتكارية والتنفيذ"]) [cite: 3, 23, 32]
     
     with tab1:
         st.markdown(f"<div style='direction:rtl; text-align:right;'>{level1_text}</div>", unsafe_allow_html=True)
         if competitors_table.strip():
             st.markdown("#### 🔄 مصفوفة المقارنة التنافسية وتحديد الفجوات")
-            st.markdown(f"<div style='direction:rtl; text-align:right;'>{competitors_table}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='direction:rtl; text-align:right;'>{competitors_table}</div>", unsafe_allow_html=True) [cite: 15]
+            
+            st.divider()
+            # 🔥 زر استعلام جوجل باتنت الحي المباشر دون الحاجة لحسابات
+            search_query = st.session_state.final_idea.replace(" ", "+")
+            google_patents_url = f"https://patents.google.com/?q={search_query}&sort=new"
+            st.markdown(f"""
+                <div style="text-align: right; direction: rtl; margin-top: 15px;">
+                    <p style="font-size: 12pt; color: #475569;">💡 <b>فحص حي إضافي:</b> يمكنك التحقق من براءات الاختراع المودعة عالمياً والمشابهة لابتكارك مباشرة عبر الرابط الديناميكي التالي:</p>
+                    <a href="{google_patents_url}" target="_blank" style="background-color: #1e3a8a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">🔍 استكشاف الفكرة حياً في Google Patents</a>
+                </div>
+            """, unsafe_allow_html=True)
             
     with tab2:
         st.markdown(f"<div style='direction:rtl; text-align:right;'>{level2_text}</div>", unsafe_allow_html=True)
         st.divider()
+        
+        # 🔥 حقن مرجعية تشريعات اليمن لـ WIPO Lex في قلب تبويب القوانين
+        wipo_ye_url = "https://www.wipo.int/wipolex/ar/legislation/results?countryOrgs=YE&last=true&activeCollection=laws&collection=laws&collection=treaties&collection=judgments"
+        st.markdown(f"""
+            <div style="background-color: #f1f5f9; padding: 15px; border-radius: 6px; border-right: 4px solid #475569; text-align: right; direction: rtl; margin-bottom: 20px;">
+                <b>⚖️ المرجعية القانونية والتشريعية المحلية (WIPO Lex):</b><br>
+                لتكييف المطالبات القانونية أعلاه وحمايتها محلياً، تم ربط الفحص بالقوانين والاتفاقيات النافذة في الجمهورية اليمنية المعتمدة لدى المنظمة العالمية للملكية الفكرية. 
+                <br><a href="{wipo_ye_url}" target="_blank" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; display: inline-block; margin-top: 8px;">🔗 اضغط هنا لتصفح جدول التشريعات والمعاهدات اليمنية النافذة في WIPO</a>
+            </div>
+        """, unsafe_allow_html=True)
+        
         st.markdown(f"<div style='direction:rtl; text-align:right;'>{audit_text}</div>", unsafe_allow_html=True)
         
     with tab3:
@@ -385,16 +397,15 @@ else:
 
     st.divider()
     
-    # عرض التوصية الكبرى في صندوق بارز
-    st.warning(f"**💡 توصية الريادة الابتكارية (مستشارك الرقمي)**\n\n{sovereignty_text.replace('### خامساً: توصية السيادة التسويقية المطلقة', '')}")
+    # عرض التوصية الكبرى المعدلة بمسماها الجديد
+    st.warning(f"**💡 توصية الريادة الابتكارية (مستشارك الرقمي)**\n\n{sovereignty_text.replace('### خامساً: توصية السيادة التسويقية المطلقة', '')}") [cite: 49]
 
     st.divider()
     
-    # زر توليد وتحميل ملف الـ Word المنسق والمحمي
     docx_file = create_docx(report, st.session_state.final_idea)
     if docx_file:
         st.download_button(
-            label="📥 تحميل التقرير الاستشاري كملف Word منسق",
+            label="📥 تحميل التقرير الاستشاري كملف Word منسق موسط",
             data=docx_file,
             file_name="Innovation_Sovereignty_Report.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
