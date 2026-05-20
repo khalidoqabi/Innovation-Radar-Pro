@@ -1,91 +1,3 @@
-import streamlit as st
-import requests
-import re
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt, RGBColor
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from io import BytesIO
-import base64
-
-# --- 1. إعدادات الهوية البصرية وتنسيق RTL ---
-st.set_page_config(page_title="Innovation Radar Pro v2", layout="wide")
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
-    
-    /* إجبار التطبيق بالكامل على اتجاه اليمين والمحاذاة لليمين */
-    html, body, [data-testid="stAppViewContainer"], .stApp {
-        direction: rtl !important;
-        text-align: right !important;
-        font-family: 'Tajawal', sans-serif !important;
-    }
-    
-    /* منع التوسيط في المتصفح للحفاظ على القراءة اليمينية المريحة */
-    p, li, span, div, label {
-        direction: rtl !important;
-        text-align: right !important;
-        line-height: 1.6 !important;
-        display: block; 
-    }
-
-    /* ضمان محاذاة العناوين لليمين في المتصفح */
-    h1, h2, h3, h4, h5, h6 {
-        text-align: right !important;
-        color: #1e3a8a !important;
-        direction: rtl !important;
-    }
-
-    /* تحسين شكل صناديق التنبيه لتكون محاذاتها يميناً */
-    div[data-testid="stMarkdownContainer"] > div {
-        text-align: right !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-
-# ==========================================
-# 2. دالة الاتصال بالمحرك (جوجل API)
-# ==========================================
-def call_pro_api(prompt, image_file=None):
-    if "PRO_API_KEY" not in st.secrets:
-        return "خطأ: مفتاح API غير موجود في إعدادات Secrets"
-        
-    api_key = st.secrets["PRO_API_KEY"]
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
-    headers = {'Content-Type': 'application/json'}
-    
-    try:
-        if image_file:
-            img_data = base64.b64encode(image_file.read()).decode('utf-8')
-            payload = {
-                "contents": [{
-                    "parts": [
-                        {"text": prompt},
-                        {"inline_data": {"mime_type": "image/jpeg", "data": img_data}}
-                    ]
-                }]
-            }
-        else:
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}]
-            }
-
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        
-        if response.status_code == 200:
-            return response.json()['candidates'][0]['content']['parts'][0]['text']
-        else:
-            return f"خطأ في الاتصال: {response.status_code} - {response.text}"
-            
-    except Exception as e:
-        return f"فشل النظام في الاستجابة: {str(e)}"
-
-
-# ==========================================
-# 3. دالة توليد ملف الوورد المنسق (التوسيط الكامل بناءً على رغبتك)
-# ==========================================
 def create_docx(report_text, idea_title):
     try:
         from docx import Document
@@ -128,7 +40,7 @@ def create_docx(report_text, idea_title):
         p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_title.paragraph_format.right_to_left = True
         
-        run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي') [cite: 1]
+        run_title = p_title.add_run('تقرير رادار الابتكار الاحترافي')
         run_title.bold = True
         run_title.font.size = Pt(18)
         run_title.font.name = 'Arial'
@@ -140,7 +52,7 @@ def create_docx(report_text, idea_title):
         p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_sub.paragraph_format.right_to_left = True
         
-        run_sub = p_sub.add_run(f"عنوان الابتكار: {short_title}") [cite: 2]
+        run_sub = p_sub.add_run(f"عنوان الابتكار: {short_title}")
         run_sub.font.size = Pt(14)
         run_sub.font.name = 'Arial'
         run_sub.font.color.rgb = RGBColor(100, 116, 139)
@@ -172,13 +84,13 @@ def create_docx(report_text, idea_title):
         else:
             p_sub.paragraph_format.space_after = Pt(24)
 
-        # --- د. متن التقرير (التوسيط الكامل بناءً على التحديث الصارم) ---
+        # --- د. متن التقرير (التوسيط الكامل الموزون والمحمي من أخطاء المسافات) ---
         for para in clean_text.split('\n'):
             text = para.strip()
             if text:
                 p = doc.add_paragraph()
                 p.paragraph_format.right_to_left = True
-                p.alignment = WD_ALIGN_PARAGRAPH.CENTER  # جعل كافة الفقرات موسطة تماماً في الصفحة
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 p.paragraph_format.line_spacing = 1.3
                 
                 run = p.add_run(text)
@@ -187,7 +99,7 @@ def create_docx(report_text, idea_title):
                 rPr = run._element.get_or_add_rPr()
                 rPr.get_or_add_rtl().val = True
                 
-     keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
+                keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
                 if any(h in text for h in keywords):
                     run.bold = True
                     run.font.size = Pt(16)
@@ -199,7 +111,7 @@ def create_docx(report_text, idea_title):
                     run.font.color.rgb = TEXT_COLOR
                     p.paragraph_format.space_after = Pt(8)
 
-        # --- هـ. حقوق الإعداد والتطوير في الأسفل (موسطة أيضاً) ---
+        # --- هـ. حقوق الإعداد والتطوير في الأسفل (موسطة) ---
         doc.add_paragraph() 
         p_footer = doc.add_paragraph()
         p_footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -212,7 +124,7 @@ def create_docx(report_text, idea_title):
         p_credit.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_credit.paragraph_format.right_to_left = True
         
-        run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي') [cite: 57]
+        run_credit = p_credit.add_run('إعداد وتطوير: أ. خالد العقبي | المسار الرقمي')
         run_credit.bold = True
         run_credit.font.size = Pt(11)
         run_credit.font.name = 'Arial'
