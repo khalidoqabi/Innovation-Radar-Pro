@@ -187,7 +187,7 @@ def create_docx(report_text, idea_title):
                 rPr = run._element.get_or_add_rPr()
                 rPr.get_or_add_rtl().val = True
                 
-                keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
+     keywords = ["التشخيص", "المطالبات", "الجدوى", "الفرادة", "توصية", "المنافسون", "خارطة"]
                 if any(h in text for h in keywords):
                     run.bold = True
                     run.font.size = Pt(16)
