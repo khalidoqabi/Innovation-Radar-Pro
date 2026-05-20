@@ -324,6 +324,10 @@ else:
     clean_report = re.sub(r'\[===SCORE===\].*?\[===/SCORE===\]', '', report, flags=re.DOTALL)
     
     # تحصين تفكيك أجزاء البروتوكول الحازم لمنع الـ NameError نهائياً
+# تنظيف النص المعروض من أوسمة السكور
+    clean_report = re.sub(r'\[===SCORE===\].*?\[===/SCORE===\]', '', report, flags=re.DOTALL)
+    
+    # تحصين تفكيك أجزاء البروتوكول الحازم لمنع الـ NameError نهائياً
     parts = re.split(r'\[===LEVEL[1-3]===\]|\[===COMPETITORS_TABLE===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', clean_report)
     
     # تعريف افتراضي لجميع الأقسام لتفادي نقص العناصر في المصفوفة
@@ -348,14 +352,39 @@ else:
 
     st.markdown("### 🎯 التقييم الفوري ومستوى جدية الابتكار")
     
+    if innovation_score >= 85:
+        score_color = "#10b981"  # أخضر
+        score_status = "ريادة استثنائية - خندق مائي حصين وجاهز للتحصين 🛡️"
+    elif innovation_score >= 50:
+        score_color = "#f59e0b"  # برتقالي ذهبي
+        score_status = "ريادة متوسطة - الفكرة تحتاج لتعميق الآلية التقنية 💡"
+    else:
+        score_color = "#ef4444"  # أحمر
+        score_status = "معطيات شحيحة - الفكرة تفتقر للريادة وتقع في منطقة الخطر ⚠️"
+
+    st.markdown(f"""
+        <div style="background-color: #f8fafc; border-right: 6px solid {score_color}; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: right; direction: rtl;">
+            <span style="font-size: 14pt; color: #64748b; font-weight: 500;">مؤشر الريادة الابتكارية المحتملة بناءً على معطياتك الحالية:</span>
+            <div style="display: block; margin: 10px 0;">
+                <span style="font-size: 36pt; font-weight: bold; color: {score_color};">{innovation_score}%</span>
+                <span style="font-size: 14pt; font-weight: bold; color: #1e3a8a; margin-right: 15px;">({score_status})</span>
+            </div>
+            <div style="background-color: #e2e8f0; border-radius: 4px; height: 12px; width: 100%; overflow: hidden;">
+                <div style="background-color: {score_color}; height: 100%; width: {innovation_score}%; border-radius: 4px;"></div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # 🔑 إعادة زرع سطر التبويبات بشكل سليم ومحاذاته تماماً مع الكتل الشرطية
+    tab1, tab2, tab3 = st.tabs(["📊 التشخيص والجوهر الهندسي", "🔧 المطالبات والتحصين", "🛣️ خطة الريادة الابتكارية والتنفيذ"])
+    
     with tab1:
         st.markdown(f"<div style='direction:rtl; text-align:right;'>{level1_text}</div>", unsafe_allow_html=True)
         if competitors_table.strip():
             st.markdown("#### 🔄 مصفوفة المقارنة التنافسية وتحديد الفجوات")
-            st.markdown(f"<div style='direction:rtl; text-align:right;'>{competitors_table}</div>", unsafe_allow_html=True) [cite: 15]
+            st.markdown(f"<div style='direction:rtl; text-align:right;'>{competitors_table}</div>", unsafe_allow_html=True)
             
             st.divider()
-            # 🔥 زر استعلام جوجل باتنت الحي المباشر دون الحاجة لحسابات
             search_query = st.session_state.final_idea.replace(" ", "+")
             google_patents_url = f"https://patents.google.com/?q={search_query}&sort=new"
             st.markdown(f"""
