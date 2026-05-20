@@ -320,44 +320,33 @@ else:
     score_match = re.search(r'\[===SCORE===\]\s*(\d+)\s*\[===/SCORE===\]', report)
     innovation_score = int(score_match.group(1)) if score_match else 75
         
+# تنظيف النص المعروض من أوسمة السكور
     clean_report = re.sub(r'\[===SCORE===\].*?\[===/SCORE===\]', '', report, flags=re.DOTALL)
     
+    # تحصين تفكيك أجزاء البروتوكول الحازم لمنع الـ NameError نهائياً
     parts = re.split(r'\[===LEVEL[1-3]===\]|\[===COMPETITORS_TABLE===\]|\[===AUDIT===\]|\[===SOVEREIGNTY===\]', clean_report)
     
-    level1_text = parts[1] if len(parts) > 1 else report
-    competitors_table = parts[2] if len(parts) > 2 else ""
-    level2_text = parts[3] if len(parts) > 3 else ""
-    level3_text = parts[4] if len(parts) > 4 else ""
-    audit_text = parts[5] if len(parts) > 5 else ""
-    sovereignty_text = parts[6] if len(parts) > 6 else ""
+    # تعريف افتراضي لجميع الأقسام لتفادي نقص العناصر في المصفوفة
+    level1_text = ""
+    competitors_table = ""
+    level2_text = ""
+    level3_text = ""
+    audit_text = ""
+    sovereignty_text = ""
+
+    # تعبئة المتغيرات بناءً على ما رجع من المحرك فعلياً
+    if len(parts) > 1: level1_text = parts[1]
+    if len(parts) > 2: competitors_table = parts[2]
+    if len(parts) > 3: level2_text = parts[3]
+    if len(parts) > 4: level3_text = parts[4]
+    if len(parts) > 5: audit_text = parts[5]
+    if len(parts) > 6: sovereignty_text = parts[6]
+
+    # إذا فشل التفكيك تماماً، نضع النص كاملاً في التبويب الأول كخطة احتياطية
+    if not level1_text.strip():
+        level1_text = clean_report
 
     st.markdown("### 🎯 التقييم الفوري ومستوى جدية الابتكار")
-    
-    if innovation_score >= 85:
-        score_color = "#10b981"  # أخضر
-        score_status = "ريادة استثنائية - خندق مائي حصين وجاهز للتحصين 🛡️"
-    elif innovation_score >= 50:
-        score_color = "#f59e0b"  # برتقالي ذهبي
-        score_status = "ريادة متوسطة - الفكرة تحتاج لتعميق الآلية التقنية 💡"
-    else:
-        score_color = "#ef4444"  # أحمر
-        score_status = "معطيات شحيحة - الفكرة تفتقر للريادة وتقع في منطقة الخطر ⚠️"
-
-    st.markdown(f"""
-        <div style="background-color: #f8fafc; border-right: 6px solid {score_color}; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: right; direction: rtl;">
-            <span style="font-size: 14pt; color: #64748b; font-weight: 500;">مؤشر الريادة الابتكارية المحتملة بناءً على معطياتك الحالية:</span>
-            <div style="display: block; margin: 10px 0;">
-                <span style="font-size: 36pt; font-weight: bold; color: {score_color};">{innovation_score}%</span>
-                <span style="font-size: 14pt; font-weight: bold; color: #1e3a8a; margin-right: 15px;">({score_status})</span>
-            </div>
-            <div style="background-color: #e2e8f0; border-radius: 4px; height: 12px; width: 100%; overflow: hidden;">
-                <div style="background-color: {score_color}; height: 100%; width: {innovation_score}%; border-radius: 4px;"></div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-# عرض التبويبات الثلاثة الاستشارية
-    tab1, tab2, tab3 = st.tabs(["📊 التشخيص والجوهر الهندسي", "🔧 المطالبات والتحصين", "🛣️ خطة الريادة الابتكارية والتنفيذ"])
     
     with tab1:
         st.markdown(f"<div style='direction:rtl; text-align:right;'>{level1_text}</div>", unsafe_allow_html=True)
