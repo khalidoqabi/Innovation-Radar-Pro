@@ -415,9 +415,9 @@ else:
 
     st.divider()
     
-    # عرض التوصية الكبرى المعدلة بمسماها الجديد
-    st.warning(f"**💡 توصية الريادة الابتكارية (مستشارك الرقمي)**\n\n{sovereignty_text.replace('### خامساً: توصية السيادة التسويقية المطلقة', '')}") [cite: 49]
-
+# عرض التوصية الكبرى في صندوق بارز بشكل آمن ومباشر
+    if sovereignty_text.strip():
+        st.warning(f"**💡 توصية الريادة الابتكارية (مستشارك الرقمي)**\n\n{sovereignty_text}")
     st.divider()
     
     docx_file = create_docx(report, st.session_state.final_idea)
